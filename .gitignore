@@ -1,0 +1,9 @@
+.gitGraph/
+.idea/
+.pytest_cache/
+build/
+dist/
+examples/
+__pycache__/
+*.egg-info/
+*.pyc
