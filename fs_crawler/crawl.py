@@ -9,9 +9,9 @@ def parse(path):
     :param path: path of the root folder to parse
     :type path: pathlib.Path
 
-    :return: DataFrame with one row per file and columns:
+    :return: DataFrame with one row per file and with columns:
              * Folder: path of the file's parent folder - pathlib.Path
-             * File: filename - str
+             * File: file name - str
              * Size: size of the file in bytes - unsigned int
     :rtype: pandas.DataFrame
     """
