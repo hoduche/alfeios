@@ -57,7 +57,7 @@ def main(path):
     dirs_listing = {}
 
     for dir_path, subdir_names, file_names in os.walk(path, topdown=False):
-        key_set = set()
+        hash_set = set()
 
         for file_name in file_names:
             file_path = pathlib.Path(dir_path) / file_name
@@ -67,19 +67,23 @@ def main(path):
                 while len(content_stream) > 0:
                     file_hasher.update(content_stream)
                     content_stream = file_content.read(BLOCK_SIZE)
-            file_content_key = file_hasher.hexdigest()
+            file_content_hash = file_hasher.hexdigest()
+            file_content_size = file_path.stat().st_size
+            file_content_key = (file_content_hash, 'FILE', file_content_size)
             content_listing[file_content_key].append(str(file_path))
-            key_set.add(file_content_key)
+            hash_set.add(file_content_hash)
 
         for subdir_name in subdir_names:
             subdir_path = pathlib.Path(dir_path) / subdir_name
-            key_set.add(dirs_listing[str(subdir_path)])
+            subdir_content_hash = dirs_listing[str(subdir_path)]
+            hash_set.add(subdir_content_hash)
 
-        if key_set:
-            dir_content = str(key_set).encode()
-            dir_content_key = hashlib.md5(dir_content).hexdigest()
+        if hash_set:
+            dir_content = str(hash_set).encode()
+            dir_content_hash = hashlib.md5(dir_content).hexdigest()
+            dir_content_key = (dir_content_hash, 'DIR', 0)
             content_listing[dir_content_key].append(str(dir_path))
-            dirs_listing[str(dir_path)] = dir_content_key
+            dirs_listing[str(dir_path)] = dir_content_hash
 
     return content_listing, dirs_listing
 
@@ -91,7 +95,7 @@ if __name__ == '__main__':
     print('------------------')
     tab = '    '
     for x in content_listing:
-        print(tab + x)
+        print(tab + str(x))
         for y in content_listing[x]:
             print(2 * tab + y)
     print('------------------')
@@ -99,6 +103,3 @@ if __name__ == '__main__':
         print(tab + x)
         print(2 * tab + dirs_listing[x])
     print('------------------')
-
-
-# todo : rajouter le getsize sur les fichiers (plutôt les contenus) + séparer les files des folders (2 dict ou un tuple dans le dict)
