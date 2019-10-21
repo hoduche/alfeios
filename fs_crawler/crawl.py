@@ -5,8 +5,9 @@ import pathlib
 
 import pandas as pd
 
-MAX_SIZE = 1048576  # ie  1 Mo
 BLOCK_SIZE = 65536  # ie 64 Ko
+FILE_TYPE = 'FILE'
+DIR_TYPE = 'DIR'
 
 
 def parse(path):
@@ -53,14 +54,18 @@ def dump_folder_content(path):
 
 
 def main(path):
-    content_listing = collections.defaultdict(list)
-    dirs_listing = {}
+    content_listing = collections.defaultdict(list)  # {(hash, type, int): [pathlib.Path]}
+    dirs_content_hash = {}  # {pathlib.Path: hash}
+    dirs_size = {}  # {pathlib.Path: int}
 
-    for dir_path, subdir_names, file_names in os.walk(path, topdown=False):
-        hash_set = set()
+    for dir_path_string, subdir_names, file_names in os.walk(path, topdown=False):
+        dir_path = pathlib.Path(dir_path_string)
+        dir_content_hash_set = set()
+        dir_size = 0
 
         for file_name in file_names:
-            file_path = pathlib.Path(dir_path) / file_name
+            file_path = dir_path / file_name
+
             file_hasher = hashlib.md5()
             with open(file_path, 'rb') as file_content:
                 content_stream = file_content.read(BLOCK_SIZE)
@@ -68,38 +73,51 @@ def main(path):
                     file_hasher.update(content_stream)
                     content_stream = file_content.read(BLOCK_SIZE)
             file_content_hash = file_hasher.hexdigest()
+            dir_content_hash_set.add(file_content_hash)
+
             file_content_size = file_path.stat().st_size
-            file_content_key = (file_content_hash, 'FILE', file_content_size)
-            content_listing[file_content_key].append(str(file_path))
-            hash_set.add(file_content_hash)
+            dir_size += file_content_size
+
+            file_content_key = (file_content_hash, FILE_TYPE, file_content_size)
+            content_listing[file_content_key].append(file_path)
 
         for subdir_name in subdir_names:
-            subdir_path = pathlib.Path(dir_path) / subdir_name
-            subdir_content_hash = dirs_listing[str(subdir_path)]
-            hash_set.add(subdir_content_hash)
+            subdir_path = dir_path / subdir_name
 
-        if hash_set:
-            dir_content = str(hash_set).encode()
-            dir_content_hash = hashlib.md5(dir_content).hexdigest()
-            dir_content_key = (dir_content_hash, 'DIR', 0)
-            content_listing[dir_content_key].append(str(dir_path))
-            dirs_listing[str(dir_path)] = dir_content_hash
+            subdir_content_hash = dirs_content_hash[subdir_path]
+            dir_content_hash_set.add(subdir_content_hash)
 
-    return content_listing, dirs_listing
+            subdir_size = dirs_size[subdir_path]
+            dir_size += subdir_size
+
+        if dir_content_hash_set:
+            file_content_hash_list = sorted(dir_content_hash_set)
+            dir_content = '/n'.join(file_content_hash_list)
+            dir_content_hash = hashlib.md5(dir_content.encode()).hexdigest()
+            dirs_content_hash[dir_path] = dir_content_hash
+
+            dirs_size[dir_path] = dir_size
+
+            dir_content_key = (dir_content_hash, DIR_TYPE, dir_size)
+            content_listing[dir_content_key].append(dir_path)
+
+    return content_listing, dirs_content_hash, dirs_size
 
 
 if __name__ == '__main__':
-    tests_data_path = pathlib.Path(__file__).resolve().expanduser()
-    tests_data_path = tests_data_path.parent.parent / 'tests' / 'data'
-    content_listing, dirs_listing = main(tests_data_path / 'Folder0')
+    project_path = pathlib.Path(__file__).resolve().expanduser().parent.parent
+    tests_data_path = project_path / 'tests' / 'data'
+    listing, hashes, sizes = main(tests_data_path / 'Folder0')
     print('------------------')
     tab = '    '
-    for x in content_listing:
-        print(tab + str(x))
-        for y in content_listing[x]:
-            print(2 * tab + y)
+    for x in listing:
+        print(x)
+        for y in listing[x]:
+            print(tab + str(y))
     print('------------------')
-    for x in dirs_listing:
-        print(tab + x)
-        print(2 * tab + dirs_listing[x])
+    for x in hashes:
+        print(str(x) + tab + hashes[x])
+    print('------------------')
+    for x in sizes:
+        print(str(x) + tab + str(sizes[x]))
     print('------------------')
