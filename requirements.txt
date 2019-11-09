@@ -1,2 +1,2 @@
-pandas
-pytest>=3.9
+pandas>=0.25
+pytest>=5.2

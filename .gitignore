@@ -1,6 +1,7 @@
 .gitGraph/
 .idea/
 .pytest_cache/
+.ipynb_checkpoints/
 build/
 dist/
 examples/

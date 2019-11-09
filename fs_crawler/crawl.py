@@ -1,7 +1,10 @@
+import ast
 import collections
 import hashlib
+import json
 import os
 import pathlib
+import pickle
 
 import pandas as pd
 
@@ -104,20 +107,67 @@ def main(path):
     return content_listing, dirs_content_hash, dirs_size
 
 
+tabulation = 4 * ' '
+
+
+def print_simple_dict(simple_dict):
+    for each_key in simple_dict:
+        print(str(each_key) + tabulation + str(simple_dict[each_key]))
+
+
+def print_dict_of_list(dict_of_list):
+    for each_key in dict_of_list:
+        print(each_key)
+        for each_value in dict_of_list[each_key]:
+            print(tabulation + str(each_value))
+
+
+def dump_json_listing(listing, file_path):
+    serializable_listing = {str(tuple_key): [str(path) for path in path_list]
+                            for tuple_key, path_list in listing.items()}
+    json_listing = json.dumps(serializable_listing)
+    file_path.write_text(json_listing)
+
+
+def load_json_listing(file_path):
+    json_listing = file_path.read_text()
+    serializable_listing = json.loads(json_listing)
+    dict_listing = {ast.literal_eval(tuple_key): [pathlib.Path(path) for path in path_list]
+                    for tuple_key, path_list in serializable_listing.items()}
+    listing = collections.defaultdict(list, dict_listing)
+    return listing
+
+
+def dump_json_path_dict(path_dict, file_path):
+    serializable_path_dict = {str(path_key): value for path_key, value in path_dict.items()}
+    json_path_dict = json.dumps(serializable_path_dict)
+    file_path.write_text(json_path_dict)
+
+
+def load_json_path_dict(file_path):
+    json_path_dict = file_path.read_text()
+    serializable_path_dict = json.loads(json_path_dict)
+    path_dict = {pathlib.Path(path_key): value for path_key, value in serializable_path_dict.items()}
+    return path_dict
+
+
 if __name__ == '__main__':
     project_path = pathlib.Path(__file__).resolve().expanduser().parent.parent
     tests_data_path = project_path / 'tests' / 'data'
     listing, hashes, sizes = main(tests_data_path / 'Folder0')
+# todo   listing, hashes, sizes = main(project_path.parent) crashes on .git
+# todo   replace os.walk by a personal recursion to avoid certain files/folder (like .gitignore)
+
     print('------------------')
-    tab = '    '
-    for x in listing:
-        print(x)
-        for y in listing[x]:
-            print(tab + str(y))
+    print_dict_of_list(listing)
+    dump_json_listing(listing, tests_data_path / 'Folder0_listing.json')
+    pickle.dump(listing, open(str(tests_data_path / 'Folder0_listing.pickle'), 'wb'))
     print('------------------')
-    for x in hashes:
-        print(str(x) + tab + hashes[x])
+    print_simple_dict(hashes)
+    dump_json_path_dict(hashes, tests_data_path / 'Folder0_hashes.json')
+    pickle.dump(hashes, open(str(tests_data_path / 'Folder0_hashes.pickle'), 'wb'))
     print('------------------')
-    for x in sizes:
-        print(str(x) + tab + str(sizes[x]))
+    print_simple_dict(sizes)
+    dump_json_path_dict(sizes, tests_data_path / 'Folder0_sizes.json')
+    pickle.dump(sizes, open(str(tests_data_path / 'Folder0_sizes.pickle'), 'wb'))
     print('------------------')
