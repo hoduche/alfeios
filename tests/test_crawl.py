@@ -81,3 +81,37 @@ def test_duplicates():
 
     # verify
     assert expected_listing_duplicates == listing_duplicates
+
+
+def test_non_included_fully_included():
+    # run
+    listing3, tree3 = fsc.crawl(tests_data_path / 'Folder0' / 'Folder3')
+    listing0, tree0 = fsc.crawl(tests_data_path / 'Folder0')
+    listing_non_included = fsc.get_non_included(listing3, listing0)
+
+    # for logging purpose only
+    if debug:
+        fsc.dump_json_listing(listing_non_included, tests_data_path / 'Folder3_listing_non_included_in_Folder0.json')
+
+    # load expected
+    expected_listing_non_included = {}
+
+    # verify
+    assert expected_listing_non_included == listing_non_included
+
+
+def test_non_included_not_fully_included():
+    # run
+    listing8, tree8 = fsc.crawl(tests_data_path / 'Folder8')
+    listing0, tree0 = fsc.crawl(tests_data_path / 'Folder0')
+    listing_non_included = fsc.get_non_included(listing8, listing0)
+
+    # for logging purpose only
+    if debug:
+        fsc.dump_json_listing(listing_non_included, tests_data_path / 'Folder8_listing_non_included_in_Folder0.json')
+
+    # load expected
+    expected_listing_non_included = fsc.load_json_listing(tests_data_path / 'Folder8_listing_non_included_in_Folder0_expected.json')
+
+    # verify
+    assert expected_listing_non_included == listing_non_included

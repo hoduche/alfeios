@@ -89,6 +89,11 @@ def get_duplicates(listing):
     return result
 
 
+def get_non_included(listing, listing_ref):
+    result = {k: v for k, v in listing.items() if k not in listing_ref}
+    return result
+
+
 def dump_json_listing(listing, file_path):
     """
     :param: listing to serialize in json
