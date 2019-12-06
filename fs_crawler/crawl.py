@@ -84,6 +84,11 @@ def unify(listings, trees):
     return listing, tree
 
 
+def get_duplicates(listing):
+    result = {k: v for k, v in listing.items() if len(v) >= 2}
+    return result
+
+
 def dump_json_listing(listing, file_path):
     """
     :param: listing to serialize in json

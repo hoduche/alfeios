@@ -65,3 +65,19 @@ def test_unify():
     tree.pop(tests_data_path / 'Folder0')
     tree0_full.pop(tests_data_path / 'Folder0')
     assert tree == tree0_full
+
+
+def test_duplicates():
+    # run
+    listing, tree = fsc.crawl(tests_data_path / 'Folder0' / 'Folder3')
+    listing_duplicates = fsc.get_duplicates(listing)
+
+    # for logging purpose only
+    if debug:
+        fsc.dump_json_listing(listing_duplicates, tests_data_path / 'Folder3_listing_duplicates.json')
+
+    # load expected
+    expected_listing_duplicates = fsc.load_json_listing(tests_data_path / 'Folder3_listing_duplicates_expected.json')
+
+    # verify
+    assert expected_listing_duplicates == listing_duplicates
