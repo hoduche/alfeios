@@ -69,31 +69,6 @@ def _recursive_crawl(path, listing, tree, exclusion):
         tree[path] = file_content_key
 
 
-def unify(listings, trees):
-    tree = dict()  # = {pathlib.Path: (hash, type, int)}
-    for each_tree in trees:
-        for k, v in each_tree.items():
-            if (not k in tree) or (tree[k][2] < v[2]):
-                tree[k] = v
-    listing = collections.defaultdict(set)  # = {(hash, type, int): {pathlib.Path}}
-    for each_listing in listings:
-        for k, v in each_listing.items():
-            for each_v in v:
-                if tree[each_v] == k:
-                    listing[k].add(each_v)
-    return listing, tree
-
-
-def get_duplicates(listing):
-    result = {k: v for k, v in listing.items() if len(v) >= 2}
-    return result
-
-
-def get_non_included(listing, listing_ref):
-    result = {k: v for k, v in listing.items() if k not in listing_ref}
-    return result
-
-
 def dump_json_listing(listing, file_path):
     """
     :param: listing to serialize in json
@@ -151,8 +126,42 @@ def load_json_tree(file_path):
     return tree
 
 
+def unify(listings, trees):
+    tree = dict()  # = {pathlib.Path: (hash, type, int)}
+    for each_tree in trees:
+        for k, v in each_tree.items():
+            if (not k in tree) or (tree[k][2] < v[2]):
+                tree[k] = v
+    listing = collections.defaultdict(set)  # = {(hash, type, int): {pathlib.Path}}
+    for each_listing in listings:
+        for k, v in each_listing.items():
+            for each_v in v:
+                if tree[each_v] == k:
+                    listing[k].add(each_v)
+    return listing, tree
+
+
+def get_duplicates(listing):
+    duplicates = {k: v for k, v in listing.items() if len(v) >= 2}
+    size_gain = sum([k[2] * (len(v) - 1) for k, v in duplicates.items()])
+    duplicates_sorted_by_size = {k: v for (k, v) in sorted(duplicates.items(),
+                                                           key=lambda i: i[0][2],
+                                                           reverse=True)}
+    return duplicates_sorted_by_size, size_gain
+
+
+def get_non_included(listing, listing_ref):
+    result = {k: v for k, v in listing.items() if k not in listing_ref}
+    return result
+
+
 if __name__ == '__main__':
     desktop_path = pathlib.Path('C:/Users') / 'Henri-Olivier' / 'Desktop'
-    listing, tree = crawl(desktop_path, exclusion=['.git', 'DJI', 'huawei', 'huaweiIleDeRe'])
-    dump_json_listing(listing, desktop_path / 'desktop_listing.json')
-    dump_json_tree(tree, desktop_path / 'desktop_tree.json')
+#    folder_path = pathlib.Path('M:/PhotosVideos')
+#    listing, tree = crawl(folder_path)
+#    duplicates = get_duplicates(listing)
+#    dump_json_listing(duplicates, desktop_path / 'photos_duplicates.json')
+    duplicates = load_json_listing(desktop_path / 'photos_duplicates.json')
+    duplicates_sorted, size_gain = get_duplicates(duplicates)
+    dump_json_listing(duplicates_sorted, desktop_path / 'photos_duplicates_sorted.json')
+    print(f'you can gain {size_gain / 1E9:.2f} Gigabytes space')
