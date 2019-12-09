@@ -3,6 +3,7 @@ import collections
 import hashlib
 import json
 import pathlib
+import zipfile
 
 BLOCK_SIZE = 65536  # ie 64 Ko
 FILE_TYPE = 'FILE'
@@ -165,3 +166,11 @@ if __name__ == '__main__':
     duplicates_sorted, size_gain = get_duplicates(duplicates)
     dump_json_listing(duplicates_sorted, desktop_path / 'photos_duplicates_sorted.json')
     print(f'you can gain {size_gain / 1E9:.2f} Gigabytes space')
+
+    print('------------------')
+    zip_path = desktop_path / 'blue.zip'
+    with zipfile.ZipFile(zip_path, 'r') as zip_file:
+        for file_name in zip_file.namelist():
+            print(str(desktop_path / 'blue.zip' / file_name))
+        print('------------------')
+        zip_file.printdir()
