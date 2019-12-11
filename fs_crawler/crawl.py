@@ -1,6 +1,7 @@
 import ast
 import collections
 import hashlib
+import io
 import json
 import pathlib
 import zipfile
@@ -56,6 +57,32 @@ def _recursive_crawl(path, listing, tree, exclusion):
         dir_content_key = (dir_content_hash, DIR_TYPE, dir_content_size)
         listing[dir_content_key].add(path)
         tree[path] = dir_content_key
+
+    elif path.is_file() and path.suffix == '.zip':
+        dir_content_size = 0
+        dir_content_hash_list = []
+        with zipfile.ZipFile(path, 'r') as zfile:
+            root_path = zipfile.Path(zfile)
+            for each_child in root_path.iterdir():
+                real_path = pathlib.Path(str(each_child))
+                file_hasher = hashlib.md5()
+                with each_child.open('r') as file_content:
+                    content_stream = file_content.read(BLOCK_SIZE)
+                    while len(content_stream) > 0:
+                        file_hasher.update(content_stream)
+                        content_stream = file_content.read(BLOCK_SIZE)
+                file_content_hash = file_hasher.hexdigest()
+                file_content_size = each_child.stat().st_size
+                file_content_key = (file_content_hash, FILE_TYPE, file_content_size)
+                listing[file_content_key].add(each_child)
+                tree[each_child] = file_content_key
+
+        dir_content = '\n'.join(sorted(dir_content_hash_list))
+        dir_content_hash = hashlib.md5(dir_content.encode()).hexdigest()
+        dir_content_key = (dir_content_hash, DIR_TYPE, dir_content_size)
+        listing[dir_content_key].add(path)
+        tree[path] = dir_content_key
+
     elif path.is_file():
         file_hasher = hashlib.md5()
         with open(path, 'rb') as file_content:
@@ -148,11 +175,13 @@ def get_duplicates(listing):
     duplicates_sorted_by_size = {k: v for (k, v) in sorted(duplicates.items(),
                                                            key=lambda i: i[0][2],
                                                            reverse=True)}
-    return duplicates_sorted_by_size, size_gain
+    result = collections.defaultdict(set, duplicates_sorted_by_size)
+    return result, size_gain
 
 
 def get_non_included(listing, listing_ref):
-    result = {k: v for k, v in listing.items() if k not in listing_ref}
+    non_included = {k: v for k, v in listing.items() if k not in listing_ref}
+    result = collections.defaultdict(set, non_included)
     return result
 
 
@@ -162,15 +191,37 @@ if __name__ == '__main__':
 #    listing, tree = crawl(folder_path)
 #    duplicates = get_duplicates(listing)
 #    dump_json_listing(duplicates, desktop_path / 'photos_duplicates.json')
-    duplicates = load_json_listing(desktop_path / 'photos_duplicates.json')
-    duplicates_sorted, size_gain = get_duplicates(duplicates)
-    dump_json_listing(duplicates_sorted, desktop_path / 'photos_duplicates_sorted.json')
-    print(f'you can gain {size_gain / 1E9:.2f} Gigabytes space')
 
-    print('------------------')
+#    duplicates = load_json_listing(desktop_path / 'photos_duplicates.json')
+#    duplicates_sorted, size_gain = get_duplicates(duplicates)
+#    dump_json_listing(duplicates_sorted, desktop_path / 'photos_duplicates_sorted.json')
+#    print(f'you can gain {size_gain / 1E9:.2f} Gigabytes space')
+
     zip_path = desktop_path / 'blue.zip'
     with zipfile.ZipFile(zip_path, 'r') as zip_file:
         for file_name in zip_file.namelist():
-            print(str(desktop_path / 'blue.zip' / file_name))
-        print('------------------')
+#            print(str(desktop_path / 'blue.zip' / file_name))
+            with zip_file.open(file_name) as file:
+#                print(file.read())
+#                print('--')
+                pass
+#    print('------------------')
+    zip_path = desktop_path / 'blue.zip'
+    print(zipfile.is_zipfile(str(zip_path)))
+    with zipfile.ZipFile(zip_path, 'r') as zip_file:
         zip_file.printdir()
+        root_path = zipfile.Path(zip_file)
+        for each_path in root_path.iterdir():
+            real_path = pathlib.Path(str(each_path))
+            print(each_path)
+            print(real_path)
+            print(zipfile.is_zipfile(str(each_path)))
+            print(zipfile.is_zipfile(str(real_path)))
+            if real_path.suffix == '.zip':
+                print(True)
+                with each_path.open() as file:
+                    with zipfile.ZipFile(io.BytesIO(file.read()), 'r') as nested_zip_file:
+                        nested_zip_file.printdir()
+            with each_path.open() as file:
+                print(file.read())
+                print('--')
