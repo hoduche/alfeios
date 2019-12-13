@@ -72,11 +72,12 @@ def _recursive_crawl(path, listing, tree, exclusion):
                         file_hasher.update(content_stream)
                         content_stream = file_content.read(BLOCK_SIZE)
                 file_content_hash = file_hasher.hexdigest()
-                file_content_size = each_child.stat().st_size
+                file_content_size = zfile.getinfo(each_child.name).file_size
                 file_content_key = (file_content_hash, FILE_TYPE, file_content_size)
-                listing[file_content_key].add(each_child)
-                tree[each_child] = file_content_key
-
+                listing[file_content_key].add(real_path)
+                tree[real_path] = file_content_key
+                dir_content_size += tree[real_path][2]
+                dir_content_hash_list.append(tree[real_path][0])
         dir_content = '\n'.join(sorted(dir_content_hash_list))
         dir_content_hash = hashlib.md5(dir_content.encode()).hexdigest()
         dir_content_key = (dir_content_hash, DIR_TYPE, dir_content_size)
@@ -222,6 +223,8 @@ if __name__ == '__main__':
                 with each_path.open() as file:
                     with zipfile.ZipFile(io.BytesIO(file.read()), 'r') as nested_zip_file:
                         nested_zip_file.printdir()
-            with each_path.open() as file:
-                print(file.read())
-                print('--')
+            if each_path.is_file():
+                print(zip_file.getinfo(each_path.name).file_size)
+                with each_path.open() as file:
+                    print(file.read())
+                    print('--')

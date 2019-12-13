@@ -4,13 +4,13 @@ import pytest
 
 import fs_crawler.crawl as fsc
 
-debug = True
+debug = False
 
 tests_data_path = pathlib.Path(__file__).resolve().expanduser().parent / 'data'
 
 folders = [('Folder0', 'Folder0'),
            ('Folder0/Folder3', 'Folder3'),
-           ('FolderZipFolder', 'FolderZipFolder')]
+           ('FolderZipFile', 'FolderZipFile')]
 names = [each[1] for each in folders]
 
 
