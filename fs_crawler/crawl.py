@@ -62,18 +62,17 @@ def _recursive_crawl(path, listing, tree, exclusion):
         dir_content_size = 0
         dir_content_hash_list = []
         with zipfile.ZipFile(path, 'r') as zfile:
-            root_path = zipfile.Path(zfile)
-            for each_child in root_path.iterdir():
-                real_path = pathlib.Path(str(each_child))
+            for each_child in zfile.filelist:
                 file_hasher = hashlib.md5()
-                with each_child.open('r') as file_content:
+                with zfile.open(each_child, 'r') as file_content:
                     content_stream = file_content.read(BLOCK_SIZE)
                     while len(content_stream) > 0:
                         file_hasher.update(content_stream)
                         content_stream = file_content.read(BLOCK_SIZE)
                 file_content_hash = file_hasher.hexdigest()
-                file_content_size = zfile.getinfo(each_child.name).file_size
+                file_content_size = zfile.getinfo(each_child.filename).file_size
                 file_content_key = (file_content_hash, FILE_TYPE, file_content_size)
+                real_path = path / str(each_child.filename)
                 listing[file_content_key].add(real_path)
                 tree[real_path] = file_content_key
                 dir_content_size += tree[real_path][2]
