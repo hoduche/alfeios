@@ -62,7 +62,10 @@ def _recursive_crawl(path, listing, tree, exclusion):
         dir_content_size = 0
         dir_content_hash_list = []
         with zipfile.ZipFile(path, 'r') as zfile:
-            for each_child in zfile.filelist:
+            zfile.printdir()
+            for each_child in zfile.infolist():
+                if each_child.is_dir():
+                    print('dir !:!!!!!!!!!!!!!!!')
                 file_hasher = hashlib.md5()
                 with zfile.open(each_child, 'r') as file_content:
                     content_stream = file_content.read(BLOCK_SIZE)
@@ -210,6 +213,29 @@ if __name__ == '__main__':
     print(zipfile.is_zipfile(str(zip_path)))
     with zipfile.ZipFile(zip_path, 'r') as zip_file:
         zip_file.printdir()
+        print('------------------')
+        import os
+        dirs = list(set([os.path.dirname(x) for x in zip_file.namelist()]))
+        print(dirs)
+        topdirs = [os.path.split(x)[0] for x in dirs]
+        print(topdirs)
+#        file_info = zip_file.getinfo('fol')
+#        if file_info.is_dir():
+#            print('dir !!!!!!!!!!!!!!!!!')
+        zip_file.extractall(desktop_path)
+        print('------------------')
+        for each_path in zip_file.infolist():
+            print(each_path)
+            file_info = zip_file.getinfo(each_path.filename)
+            if file_info.is_dir():
+                print('dir !!!!!!!!!!!!!!!!!')
+        print('------------------')
+        for each_path in zip_file.namelist():
+            print(each_path)
+            file_info = zip_file.getinfo(each_path)
+            if file_info.is_dir():
+                print('dir !!!!!!!!!!!!!!!!!')
+        print('------------------')
         root_path = zipfile.Path(zip_file)
         for each_path in root_path.iterdir():
             real_path = pathlib.Path(str(each_path))
