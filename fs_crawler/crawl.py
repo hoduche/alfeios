@@ -3,6 +3,7 @@ import collections
 import hashlib
 import io
 import json
+import os.path
 import pathlib
 import zipfile
 
@@ -32,6 +33,7 @@ def crawl(path, exclusion=None):
     :return: root directory tree
     :rtype: dict = {pathlib.Path: (hash, type, int)}
     """
+
     if not exclusion:
         exclusion = []
 
@@ -88,7 +90,7 @@ def _recursive_crawl(path, listing, tree, exclusion):
 
     elif path.is_file():
         file_hasher = hashlib.md5()
-        with open(path, 'rb') as file_content:
+        with open(path, mode='rb') as file_content:
             content_stream = file_content.read(BLOCK_SIZE)
             while len(content_stream) > 0:
                 file_hasher.update(content_stream)
@@ -100,28 +102,43 @@ def _recursive_crawl(path, listing, tree, exclusion):
         tree[path] = file_content_key
 
 
-def dump_json_listing(listing, file_path):
+def relative_path(absolute_path, start_path):
+    return pathlib.Path(os.path.relpath(absolute_path, start=start_path))
+
+
+def dump_json_listing(listing, file_path, start_path):
     """
     :param: listing to serialize in json
     :rtype: collections.defaultdict(set) = {(hash, type, int): {pathlib.Path}}
 
     :param file_path: path to create the json serialized listing
     :type file_path: pathlib.Path
+
+    :param start_path: start path to remove from each path in the json serialized listing
+    :type start_path: pathlib.Path
     """
+
+    if start_path:
+        listing = {tuple_key: [relative_path(path, start_path) for path in path_set]
+                   for tuple_key, path_set in listing.items()}
     serializable_listing = {str(tuple_key): [str(path) for path in path_set]
                             for tuple_key, path_set in listing.items()}
     json_listing = json.dumps(serializable_listing)
     file_path.write_text(json_listing)
 
 
-def load_json_listing(file_path):
+def load_json_listing(file_path, start_path):
     """
     :param file_path: path to an existing json serialized listing
     :type file_path: pathlib.Path
 
     :return: deserialized listing
     :rtype: collections.defaultdict(set) = {(hash, type, int): {pathlib.Path}}
+
+    :param start_path: start path to prepend to each relative path in the listing
+    :type start_path: pathlib.Path
     """
+
     json_listing = file_path.read_text()
     serializable_listing = json.loads(json_listing)
     dict_listing = {ast.literal_eval(tuple_key): {pathlib.Path(path) for path in path_list}
@@ -130,30 +147,46 @@ def load_json_listing(file_path):
     return listing
 
 
-def dump_json_tree(tree, file_path):
+def dump_json_tree(tree, file_path, start_path=None):
     """
     :param: tree to serialize in json
     :rtype: dict = {pathlib.Path: (hash, type, int)}
 
     :param file_path: path to create the json serialized tree
     :type file_path: pathlib.Path
+
+    :param start_path: start path to remove from each path in the json serialized tree
+    :type start_path: pathlib.Path
+
+    :param start_path: start path to remove from each path in the json serialized tree
+    :type start_path: pathlib.Path
     """
+
+    if start_path:
+        tree = {relative_path(path_key, start_path): tuple_value
+                for path_key, tuple_value in tree.items()}
     serializable_tree = {str(path_key): tuple_value for path_key, tuple_value in tree.items()}
     json_tree = json.dumps(serializable_tree)
     file_path.write_text(json_tree)
 
 
-def load_json_tree(file_path):
+def load_json_tree(file_path, start_path):
     """
     :param file_path: path to an existing json serialized tree
     :type file_path: pathlib.Path
 
     :return: deserialized tree
     :rtype: dict = {pathlib.Path: (hash, type, int)}
+
+    :param start_path: start path to prepend to each relative path in the tree
+    :type start_path: pathlib.Path
     """
+
     json_tree = file_path.read_text()
     serializable_tree = json.loads(json_tree)
     tree = {pathlib.Path(path_key): tuple(value) for path_key, value in serializable_tree.items()}
+    if start_path:
+        tree = {start_path / path_key: tuple_value for path_key, tuple_value in tree.items()}
     return tree
 
 
