@@ -34,9 +34,11 @@ def test_crawl(folder, name):
         tests_data_path / (name + '_tree_expected.json'), tests_data_path)
 
     # verify
-    assert listing == expected_listing
     fsc.dump_json_tree(tree, tests_data_path / ('tree.json'))
     fsc.dump_json_tree(expected_tree, tests_data_path / ('expected_tree.json'))
+    fsc.dump_json_listing(listing, tests_data_path / ('listing.json'))
+    fsc.dump_json_listing(expected_listing, tests_data_path / ('expected_listing.json'))
+    assert listing == expected_listing
     assert tree == expected_tree
 
 

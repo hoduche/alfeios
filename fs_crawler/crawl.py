@@ -106,7 +106,7 @@ def relative_path(absolute_path, start_path):
     return pathlib.Path(os.path.relpath(absolute_path, start=start_path))
 
 
-def dump_json_listing(listing, file_path, start_path):
+def dump_json_listing(listing, file_path, start_path=None):
     """
     :param: listing to serialize in json
     :rtype: collections.defaultdict(set) = {(hash, type, int): {pathlib.Path}}
@@ -143,6 +143,9 @@ def load_json_listing(file_path, start_path):
     serializable_listing = json.loads(json_listing)
     dict_listing = {ast.literal_eval(tuple_key): {pathlib.Path(path) for path in path_list}
                     for tuple_key, path_list in serializable_listing.items()}
+    if start_path:
+        dict_listing = {tuple_key: {start_path / path for path in path_list}
+                        for tuple_key, path_list in dict_listing.items()}
     listing = collections.defaultdict(set, dict_listing)
     return listing
 
