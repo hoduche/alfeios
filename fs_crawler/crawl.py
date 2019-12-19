@@ -132,11 +132,11 @@ def load_json_listing(file_path, start_path):
     :param file_path: path to an existing json serialized listing
     :type file_path: pathlib.Path
 
-    :return: deserialized listing
-    :rtype: collections.defaultdict(set) = {(hash, type, int): {pathlib.Path}}
-
     :param start_path: start path to prepend to each relative path in the listing
     :type start_path: pathlib.Path
+
+    :return: deserialized listing
+    :rtype: collections.defaultdict(set) = {(hash, type, int): {pathlib.Path}}
     """
 
     json_listing = file_path.read_text()
@@ -175,11 +175,11 @@ def load_json_tree(file_path, start_path):
     :param file_path: path to an existing json serialized tree
     :type file_path: pathlib.Path
 
-    :return: deserialized tree
-    :rtype: dict = {pathlib.Path: (hash, type, int)}
-
     :param start_path: start path to prepend to each relative path in the tree
     :type start_path: pathlib.Path
+
+    :return: deserialized tree
+    :rtype: dict = {pathlib.Path: (hash, type, int)}
     """
 
     json_tree = file_path.read_text()
