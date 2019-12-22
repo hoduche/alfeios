@@ -5,6 +5,7 @@ import io
 import json
 import os.path
 import pathlib
+import tempfile
 import zipfile
 
 BLOCK_SIZE = 65536  # ie 64 Ko
@@ -240,5 +241,17 @@ class Node:
 
 if __name__ == '__main__':
     desktop_path = pathlib.Path('C:/Users') / 'Henri-Olivier' / 'Desktop'
-    p1 = Node(desktop_path)
-    print(p1.get_name())
+    zip_path = desktop_path / 'red.zip'
+    with zipfile.ZipFile(zip_path, 'r') as zip_file:
+        temp_dir = tempfile.mkdtemp()
+        zip_file.extractall(temp_dir)
+        temp_path = pathlib.Path(temp_dir)
+        listing, tree = crawl(temp_path)
+        dump_json_listing(
+            listing,
+            desktop_path / 'temp_listing.json',
+            start_path=temp_path)
+        dump_json_tree(
+            tree,
+            desktop_path / 'temp_tree.json',
+            start_path=temp_path)
