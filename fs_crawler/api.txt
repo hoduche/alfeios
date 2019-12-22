@@ -1,0 +1,13 @@
+===========================================================
+- class that have to implement my interface :
+===========================================================
+
+ * path
+ * zipfile
+ * zipfile inside zipfile
+
+factory:
+if path.is_file():
+elif path.is_dir():
+elif path.is_file() and path.suffix == '.zip':
+
