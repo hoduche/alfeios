@@ -95,8 +95,8 @@ def test_unify():
     listing.pop(('7e472b2b54ba97314c63988db267d125', 'DIR', 2698920))
     listing0_full.pop(('4f8c48630a797715e8b86466e0218aa1', 'DIR', 3598557))
     assert listing == listing0_full
-    tree.pop(fsc.Node(tests_data_path / 'Folder0'))
-    tree0_full.pop(fsc.Node(tests_data_path / 'Folder0'))
+    tree.pop(tests_data_path / 'Folder0')
+    tree0_full.pop(tests_data_path / 'Folder0')
     assert tree == tree0_full
 
 

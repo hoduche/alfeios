@@ -1,7 +1,6 @@
 import ast
 import collections
 import hashlib
-import io
 import json
 import os.path
 import pathlib
@@ -41,38 +40,38 @@ def crawl(path, exclusion=None):
     listing = collections.defaultdict(set)
     tree = dict()
 
-    _recursive_crawl(Node(path), listing, tree, exclusion)
+    _recursive_crawl(path, listing, tree, exclusion)
 
     return listing, tree
 
 
-def _recursive_crawl(node, listing, tree, exclusion):
-    if node.is_dir():
+def _recursive_crawl(path, listing, tree, exclusion):
+    if path.is_dir():
         dir_content_size = 0
         dir_content_hash_list = []
-        for each_child in node.get_children():
-            if each_child.get_name() not in exclusion:
+        for each_child in path.iterdir():
+            if each_child.name not in exclusion:
                 _recursive_crawl(each_child, listing, tree, exclusion)
                 dir_content_size += tree[each_child][2]
                 dir_content_hash_list.append(tree[each_child][0])
         dir_content = '\n'.join(sorted(dir_content_hash_list))
         dir_content_hash = hashlib.md5(dir_content.encode()).hexdigest()
         dir_content_key = (dir_content_hash, DIR_TYPE, dir_content_size)
-        listing[dir_content_key].add(node)
-        tree[node] = dir_content_key
+        listing[dir_content_key].add(path)
+        tree[path] = dir_content_key
 
-    elif node.is_file():
+    elif path.is_file():
         file_hasher = hashlib.md5()
-        with node.open_rb() as file_content:
+        with open(path, mode='rb') as file_content:
             content_stream = file_content.read(BLOCK_SIZE)
             while len(content_stream) > 0:
                 file_hasher.update(content_stream)
                 content_stream = file_content.read(BLOCK_SIZE)
         file_content_hash = file_hasher.hexdigest()
-        file_content_size = node.get_size()
+        file_content_size = path.stat().st_size
         file_content_key = (file_content_hash, FILE_TYPE, file_content_size)
-        listing[file_content_key].add(node)
-        tree[node] = file_content_key
+        listing[file_content_key].add(path)
+        tree[path] = file_content_key
 
 
 def relative_path(absolute_path, start_path):
@@ -82,7 +81,7 @@ def relative_path(absolute_path, start_path):
 def dump_json_listing(listing, file_path, start_path=None):
     """
     :param: listing to serialize in json
-    :rtype: collections.defaultdict(set) = {(hash, type, int): {Node}}
+    :rtype: collections.defaultdict(set) = {(hash, type, int): {pathlib.Path}}
 
     :param file_path: path to create the json serialized listing
     :type file_path: pathlib.Path
@@ -91,8 +90,6 @@ def dump_json_listing(listing, file_path, start_path=None):
     :type start_path: pathlib.Path
     """
 
-    listing = {tuple_key: {node.get_path() for node in node_set}
-               for tuple_key, node_set in listing.items()}
     if start_path:
         listing = {tuple_key: {relative_path(path, start_path) for path in path_set}
                    for tuple_key, path_set in listing.items()}
@@ -111,7 +108,7 @@ def load_json_listing(file_path, start_path):
     :type start_path: pathlib.Path
 
     :return: deserialized listing
-    :rtype: collections.defaultdict(set) = {(hash, type, int): {Node}}
+    :rtype: collections.defaultdict(set) = {(hash, type, int): {pathlib.Path}}
     """
 
     json_listing = file_path.read_text()
@@ -121,8 +118,6 @@ def load_json_listing(file_path, start_path):
     if start_path:
         dict_listing = {tuple_key: {start_path / path for path in path_list}
                         for tuple_key, path_list in dict_listing.items()}
-    dict_listing = {tuple_key: {Node(path) for path in path_list}
-                    for tuple_key, path_list in dict_listing.items()}
     listing = collections.defaultdict(set, dict_listing)
     return listing
 
@@ -130,7 +125,7 @@ def load_json_listing(file_path, start_path):
 def dump_json_tree(tree, file_path, start_path=None):
     """
     :param: tree to serialize in json
-    :rtype: dict = {Node: (hash, type, int)}
+    :rtype: dict = {pathlib.Path: (hash, type, int)}
 
     :param file_path: path to create the json serialized tree
     :type file_path: pathlib.Path
@@ -139,8 +134,6 @@ def dump_json_tree(tree, file_path, start_path=None):
     :type start_path: pathlib.Path
     """
 
-    tree = {node_key.get_path(): tuple_value
-            for node_key, tuple_value in tree.items()}
     if start_path:
         tree = {relative_path(path_key, start_path): tuple_value
                 for path_key, tuple_value in tree.items()}
@@ -159,7 +152,7 @@ def load_json_tree(file_path, start_path):
     :type start_path: pathlib.Path
 
     :return: deserialized tree
-    :rtype: dict = {Node: (hash, type, int)}
+    :rtype: dict = {pathlib.Path: (hash, type, int)}
     """
 
     json_tree = file_path.read_text()
@@ -167,17 +160,16 @@ def load_json_tree(file_path, start_path):
     tree = {pathlib.Path(path_key): tuple(value) for path_key, value in serializable_tree.items()}
     if start_path:
         tree = {start_path / path_key: tuple_value for path_key, tuple_value in tree.items()}
-    tree = {Node(path_key): tuple_value for path_key, tuple_value in tree.items()}
     return tree
 
 
 def unify(listings, trees):
-    tree = dict()  # = {Node: (hash, type, int)}
+    tree = dict()  # = {pathlib.Path: (hash, type, int)}
     for each_tree in trees:
         for k, v in each_tree.items():
             if (not k in tree) or (tree[k][2] < v[2]):
                 tree[k] = v
-    listing = collections.defaultdict(set)  # = {(hash, type, int): {Node}}
+    listing = collections.defaultdict(set)  # = {(hash, type, int): {pathlib.Path}}
     for each_listing in listings:
         for k, v in each_listing.items():
             for each_v in v:
@@ -200,43 +192,6 @@ def get_non_included(listing, listing_ref):
     non_included = {k: v for k, v in listing.items() if k not in listing_ref}
     result = collections.defaultdict(set, non_included)
     return result
-
-
-class Node:
-
-    def __init__(self, path):
-        self.path = path
-
-    def __hash__(self):
-        return hash(self.path)
-
-    def __eq__(self, other):
-        return self.path == other.path
-
-    def __repr__(self, other):
-        return str(self.path)
-
-    def get_path(self):
-        return self.path
-
-    def is_dir(self):
-        return self.path.is_dir()
-
-    def is_file(self):
-        return self.path.is_file()
-
-    def get_name(self):
-        return self.path.name
-
-    def get_size(self):
-        return self.path.stat().st_size
-
-    def get_children(self):
-        for each_child in self.path.iterdir():
-            yield Node(each_child)
-
-    def open_rb(self):
-        return open(self.path, mode='rb')
 
 
 if __name__ == '__main__':
