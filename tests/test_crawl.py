@@ -11,7 +11,8 @@ tests_data_path = pathlib.Path(__file__).resolve().expanduser().parent / 'data'
 folders = [('Folder0', 'Folder0'),
            ('Folder0/Folder3', 'Folder3'),
            ('FolderZipFile', 'FolderZipFile'),
-           ('FolderZipFolder', 'FolderZipFolder')]
+           ('FolderZipFolder', 'FolderZipFolder'),
+           ('FolderZipNested', 'FolderZipNested')]
 names = [each[1] for each in folders]
 
 
