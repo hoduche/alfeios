@@ -219,18 +219,11 @@ def get_non_included(listing, listing_ref):
 
 
 if __name__ == '__main__':
-    desktop_path = pathlib.Path('C:/Users') / 'Henri-Olivier' / 'Desktop'
-    zip_path = desktop_path / 'red.zip'
-    with zipfile.ZipFile(zip_path, 'r') as zip_file:
-        temp_dir = tempfile.mkdtemp()
-        zip_file.extractall(temp_dir)
-        temp_path = pathlib.Path(temp_dir)
-        listing, tree = crawl(temp_path)
-        dump_json_listing(
-            listing,
-            desktop_path / 'temp_listing.json',
-            start_path=temp_path)
-        dump_json_tree(
-            tree,
-            desktop_path / 'temp_tree.json',
-            start_path=temp_path)
+    folder_path = pathlib.Path('C:/Users') / 'Henri-Olivier' / 'Desktop'
+#    folder_path = pathlib.Path('M:/PhotosVideos')
+    listing, tree = crawl(folder_path)
+    dump_json_listing(listing, folder_path / 'listing.json')
+    dump_json_tree(tree, folder_path / 'tree.json')
+    duplicates, size_gain = get_duplicates(listing)
+    dump_json_listing(duplicates, folder_path / 'duplicates.json')
+    print(f'you can gain {size_gain / 1E9:.2f} Gigabytes space')
