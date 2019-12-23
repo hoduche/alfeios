@@ -60,6 +60,15 @@ def _recursive_crawl(path, listing, tree, exclusion):
         listing[dir_content_key].add(path)
         tree[path] = dir_content_key
 
+    elif path.suffix == '.zip':
+        with zipfile.ZipFile(path, 'r') as zip_file:
+            temp_dir = tempfile.mkdtemp()
+            zip_file.extractall(temp_dir)
+            temp_path = pathlib.Path(temp_dir)
+            zip_listing, zip_tree = crawl(temp_path)
+            append_listing(listing, zip_listing, path, temp_path)
+            append_tree(tree, zip_tree, path, temp_path)
+
     elif path.is_file():
         file_hasher = hashlib.md5()
         with open(path, mode='rb') as file_content:
@@ -73,17 +82,8 @@ def _recursive_crawl(path, listing, tree, exclusion):
         listing[file_content_key].add(path)
         tree[path] = file_content_key
 
-        if path.suffix == '.zip':
-            with zipfile.ZipFile(path, 'r') as zip_file:
-                temp_dir = tempfile.mkdtemp()
-                zip_file.extractall(temp_dir)
-                temp_path = pathlib.Path(temp_dir)
-                zip_listing, zip_tree = crawl(temp_path)
-                append_listing(listing, zip_listing)
-                append_tree(tree, zip_tree)
 
-
-def relative_path(absolute_path, start_path):
+def build_relative_path(absolute_path, start_path):
     return pathlib.Path(os.path.relpath(absolute_path, start=start_path))
 
 
@@ -100,7 +100,7 @@ def dump_json_listing(listing, file_path, start_path=None):
     """
 
     if start_path:
-        listing = {tuple_key: {relative_path(path, start_path) for path in path_set}
+        listing = {tuple_key: {build_relative_path(path, start_path) for path in path_set}
                    for tuple_key, path_set in listing.items()}
     serializable_listing = {str(tuple_key): [str(pathlib.PurePosixPath(path)) for path in path_set]
                             for tuple_key, path_set in listing.items()}
@@ -144,7 +144,7 @@ def dump_json_tree(tree, file_path, start_path=None):
     """
 
     if start_path:
-        tree = {relative_path(path_key, start_path): tuple_value
+        tree = {build_relative_path(path_key, start_path): tuple_value
                 for path_key, tuple_value in tree.items()}
     serializable_tree = {str(pathlib.PurePosixPath(path_key)): tuple_value
                          for path_key, tuple_value in tree.items()}
@@ -187,15 +187,19 @@ def unify(listings, trees):
     return listing, tree
 
 
-def append_listing(listing, additional_listing):
-    for k, v in additional_listing.items():
-        for each_v in v:
-            listing[k].add(each_v)
+def append_listing(listing, additional_listing, start_path, temp_path):
+    for tuple_key, path_set in additional_listing.items():
+        for each_path in path_set:
+            each_relative_path = build_relative_path(each_path, temp_path)
+            each_absolute_path = start_path / each_relative_path
+            listing[tuple_key].add(each_absolute_path)
 
 
-def append_tree(tree, additional_tree):
-    for k, v in additional_tree.items():
-        tree[k] = v
+def append_tree(tree, additional_tree, start_path, temp_path):
+    for path_key, tuple_value in additional_tree.items():
+        relative_path_key = build_relative_path(path_key, temp_path)
+        absolute_path_key = start_path / relative_path_key
+        tree[absolute_path_key] = tuple_value
 
 
 def get_duplicates(listing):

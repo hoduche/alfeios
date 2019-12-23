@@ -4,7 +4,7 @@ import pytest
 
 import fs_crawler.crawl as fsc
 
-debug = True
+debug = False
 
 tests_data_path = pathlib.Path(__file__).resolve().expanduser().parent / 'data'
 
