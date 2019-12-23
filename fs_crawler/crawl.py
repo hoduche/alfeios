@@ -73,6 +73,15 @@ def _recursive_crawl(path, listing, tree, exclusion):
         listing[file_content_key].add(path)
         tree[path] = file_content_key
 
+        if path.suffix == '.zip':
+            with zipfile.ZipFile(path, 'r') as zip_file:
+                temp_dir = tempfile.mkdtemp()
+                zip_file.extractall(temp_dir)
+                temp_path = pathlib.Path(temp_dir)
+                zip_listing, zip_tree = crawl(temp_path)
+                append_listing(listing, zip_listing)
+                append_tree(tree, zip_tree)
+
 
 def relative_path(absolute_path, start_path):
     return pathlib.Path(os.path.relpath(absolute_path, start=start_path))
@@ -176,6 +185,17 @@ def unify(listings, trees):
                 if tree[each_v] == k:
                     listing[k].add(each_v)
     return listing, tree
+
+
+def append_listing(listing, additional_listing):
+    for k, v in additional_listing.items():
+        for each_v in v:
+            listing[k].add(each_v)
+
+
+def append_tree(tree, additional_tree):
+    for k, v in additional_tree.items():
+        tree[k] = v
 
 
 def get_duplicates(listing):
