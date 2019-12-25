@@ -1,3 +1,4 @@
+import argparse
 import ast
 import collections
 import hashlib
@@ -219,15 +220,25 @@ def get_non_included(listing, listing_ref):
 
 
 def main():
-#    folder_path = pathlib.Path('C:/Users/Henri-Olivier/Desktop/Livres')
-    folder_path = pathlib.Path('C:/Users') / 'Henri-Olivier' / 'Desktop'
-#    folder_path = pathlib.Path('M:/PhotosVideos')
+    example_text = '''examples:
+    fs-walk -p D:/Pictures
+    '''
+
+    arg_parser = argparse.ArgumentParser(prog='fs-walk',
+                                         description='Walk your file system to check duplicated files',
+                                         epilog=example_text,
+                                         formatter_class=argparse.RawTextHelpFormatter)
+    arg_parser.add_argument('-p', '--path', type=str, action='store', default='.',
+                            help='path to your git repository (default is here)')
+    args = arg_parser.parse_args()
+
+    folder_path = pathlib.Path(args.path)
     listing, tree = walk(folder_path)
     dump_json_listing(listing, folder_path / 'listing.json')
     dump_json_tree(tree, folder_path / 'tree.json')
     duplicates, size_gain = get_duplicates(listing)
     dump_json_listing(duplicates, folder_path / 'duplicates.json')
-    print(f'you can gain {size_gain / 1E9:.2f} Gigabytes space')
+    print(f'you can gain {size_gain / 1E9:.2f} Gigabytes space by going through duplicates.json')
 
 
 if __name__ == '__main__':
