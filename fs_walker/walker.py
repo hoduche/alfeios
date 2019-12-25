@@ -12,9 +12,9 @@ FILE_TYPE = 'FILE'
 DIR_TYPE = 'DIR'
 
 
-def crawl(path, exclusion=None):
+def walk(path, exclusion=None):
     """
-    Recursively crawls through a root directory to list its content.
+    Recursively walks through a root directory to list its content.
     It manages two data structures:
     listing : a collections.defaultdict(set) whose keys are tuples (hash, type, size)
               and values are list of pathlib.Path
@@ -40,18 +40,18 @@ def crawl(path, exclusion=None):
     listing = collections.defaultdict(set)
     tree = dict()
 
-    _recursive_crawl(path, listing, tree, exclusion)
+    _recursive_walk(path, listing, tree, exclusion)
 
     return listing, tree
 
 
-def _recursive_crawl(path, listing, tree, exclusion):
+def _recursive_walk(path, listing, tree, exclusion):
     if path.is_dir():
         dir_content_size = 0
         dir_content_hash_list = []
         for each_child in path.iterdir():
             if each_child.name not in exclusion:
-                _recursive_crawl(each_child, listing, tree, exclusion)
+                _recursive_walk(each_child, listing, tree, exclusion)
                 dir_content_size += tree[each_child][2]
                 dir_content_hash_list.append(tree[each_child][0])
         dir_content = '\n'.join(sorted(dir_content_hash_list))
@@ -65,7 +65,7 @@ def _recursive_crawl(path, listing, tree, exclusion):
             temp_dir = tempfile.mkdtemp()
             zip_file.extractall(temp_dir)
             temp_path = pathlib.Path(temp_dir)
-            zip_listing, zip_tree = crawl(temp_path)
+            zip_listing, zip_tree = walk(temp_path)
             append_listing(listing, zip_listing, path, temp_path)
             append_tree(tree, zip_tree, path, temp_path)
 
@@ -221,7 +221,7 @@ def get_non_included(listing, listing_ref):
 if __name__ == '__main__':
     folder_path = pathlib.Path('C:/Users') / 'Henri-Olivier' / 'Desktop'
 #    folder_path = pathlib.Path('M:/PhotosVideos')
-    listing, tree = crawl(folder_path)
+    listing, tree = walk(folder_path)
     dump_json_listing(listing, folder_path / 'listing.json')
     dump_json_tree(tree, folder_path / 'tree.json')
     duplicates, size_gain = get_duplicates(listing)

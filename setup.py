@@ -16,7 +16,7 @@ def find_requirements():
 
 
 def find_version():
-    with open('fs_crawler/__init__.py', encoding='utf-8') as version_file:
+    with open('fs_walker/__init__.py', encoding='utf-8') as version_file:
         pattern = '^__version__ = [\'\"]([^\'\"]*)[\'\"]'
         match = re.search(pattern, version_file.readline().strip())
         if match:
@@ -24,21 +24,21 @@ def find_version():
 
 
 setup(
-    name='fs-crawler',
+    name='fs-walker',
     version=find_version(),
-    description='Crawl your filesystem to check duplicated files',
+    description='Walk your file system to check duplicated files',
     long_description=find_readme(),
     long_description_content_type='text/markdown',
-    url='https://github.com/hoduche/fs-crawler',
+    url='https://github.com/hoduche/fs-walker',
     author='Henri-Olivier Duché',
     author_email='hoduche@yahoo.fr',
     license='MIT',
-    keywords='fs filesystem files duplicate',
+    keywords='fs filesystem file system walk crawl files duplicate',
     packages=find_packages(),
     include_package_data=True,
     install_requires=find_requirements(),
     python_requires='>=3',
-    entry_points={'console_scripts': ['fs-crawl = fs_crawler.crawl:main']},
+    entry_points={'console_scripts': ['fs-walk = fs_walker.walker:main']},
     classifiers=[
         "Programming Language :: Python :: 3",
         "License :: OSI Approved :: MIT License",

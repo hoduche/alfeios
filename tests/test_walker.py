@@ -2,7 +2,7 @@ import pathlib
 
 import pytest
 
-import fs_crawler.crawl as fsc
+import fs_walker.walker as fsw
 
 debug = False
 
@@ -17,65 +17,65 @@ names = [each[1] for each in folders]
 
 
 @pytest.mark.parametrize('folder, name', folders, ids=names)
-def test_crawl(folder, name):
+def test_walk(folder, name):
     # run
-    listing, tree = fsc.crawl(tests_data_path / folder)
+    listing, tree = fsw.walk(tests_data_path / folder)
 
     # for logging purpose only
     if debug:
-        fsc.dump_json_listing(
+        fsw.dump_json_listing(
             listing,
             tests_data_path / (name + '_listing.json'),
             tests_data_path)
-        fsc.dump_json_tree(
+        fsw.dump_json_tree(
             tree,
             tests_data_path / (name + '_tree.json'),
             tests_data_path)
 
     # load expected
-    expected_listing = fsc.load_json_listing(
+    expected_listing = fsw.load_json_listing(
         tests_data_path / (name + '_listing_expected.json'),
         tests_data_path)
-    expected_tree = fsc.load_json_tree(
+    expected_tree = fsw.load_json_tree(
         tests_data_path / (name + '_tree_expected.json'),
         tests_data_path)
 
     # verify
     if debug:
-        fsc.dump_json_tree(tree,
+        fsw.dump_json_tree(tree,
                            tests_data_path / 'tree.json')
-        fsc.dump_json_tree(expected_tree,
+        fsw.dump_json_tree(expected_tree,
                            tests_data_path / 'expected_tree.json')
-        fsc.dump_json_listing(listing,
+        fsw.dump_json_listing(listing,
                               tests_data_path / 'listing.json')
-        fsc.dump_json_listing(expected_listing,
+        fsw.dump_json_listing(expected_listing,
                               tests_data_path / 'expected_listing.json')
     assert listing == expected_listing
     assert tree == expected_tree
 
 
-def test_crawl_with_exclusions():
+def test_walk_with_exclusions():
     # run
-    listing, tree = fsc.crawl(tests_data_path / 'Folder0',
+    listing, tree = fsw.walk(tests_data_path / 'Folder0',
                               exclusion=['Folder3', 'Folder4_1',
                                          'file3.txt', 'groundhog.png'])
 
     # for logging purpose only
     if debug:
-        fsc.dump_json_listing(
+        fsw.dump_json_listing(
             listing,
             tests_data_path / 'Folder0_listing_with_exclusions.json',
             tests_data_path)
-        fsc.dump_json_tree(
+        fsw.dump_json_tree(
             tree,
             tests_data_path / 'Folder0_tree_with_exclusions.json',
             tests_data_path)
 
     # load expected
-    expected_listing = fsc.load_json_listing(
+    expected_listing = fsw.load_json_listing(
         tests_data_path / 'Folder0_listing_with_exclusions_expected.json',
         tests_data_path)
-    expected_tree = fsc.load_json_tree(
+    expected_tree = fsw.load_json_tree(
         tests_data_path / 'Folder0_tree_with_exclusions_expected.json',
         tests_data_path)
 
@@ -86,11 +86,11 @@ def test_crawl_with_exclusions():
 
 def test_unify():
     # run
-    listing0_no3, tree0_no3 = fsc.crawl(
+    listing0_no3, tree0_no3 = fsw.walk(
         tests_data_path / 'Folder0', exclusion=['Folder3'])
-    listing3, tree3 = fsc.crawl(tests_data_path / 'Folder0' / 'Folder3')
-    listing, tree = fsc.unify([listing0_no3, listing3], [tree0_no3, tree3])
-    listing0_full, tree0_full = fsc.crawl(tests_data_path / 'Folder0')
+    listing3, tree3 = fsw.walk(tests_data_path / 'Folder0' / 'Folder3')
+    listing, tree = fsw.unify([listing0_no3, listing3], [tree0_no3, tree3])
+    listing0_full, tree0_full = fsw.walk(tests_data_path / 'Folder0')
 
     # verify
     listing.pop(('7e472b2b54ba97314c63988db267d125', 'DIR', 2698920))
@@ -103,18 +103,18 @@ def test_unify():
 
 def test_duplicates():
     # run
-    listing, tree = fsc.crawl(tests_data_path / 'Folder0' / 'Folder3')
-    listing_duplicates, size_gain = fsc.get_duplicates(listing)
+    listing, tree = fsw.walk(tests_data_path / 'Folder0' / 'Folder3')
+    listing_duplicates, size_gain = fsw.get_duplicates(listing)
 
     # for logging purpose only
     if debug:
-        fsc.dump_json_listing(
+        fsw.dump_json_listing(
             listing_duplicates,
             tests_data_path / 'Folder3_listing_duplicates.json',
             tests_data_path)
 
     # load expected
-    expected_listing_duplicates = fsc.load_json_listing(
+    expected_listing_duplicates = fsw.load_json_listing(
         tests_data_path / 'Folder3_listing_duplicates_expected.json',
         tests_data_path)
 
@@ -125,13 +125,13 @@ def test_duplicates():
 
 def test_non_included_fully_included():
     # run
-    listing3, tree3 = fsc.crawl(tests_data_path / 'Folder0' / 'Folder3')
-    listing0, tree0 = fsc.crawl(tests_data_path / 'Folder0')
-    listing_non_included = fsc.get_non_included(listing3, listing0)
+    listing3, tree3 = fsw.walk(tests_data_path / 'Folder0' / 'Folder3')
+    listing0, tree0 = fsw.walk(tests_data_path / 'Folder0')
+    listing_non_included = fsw.get_non_included(listing3, listing0)
 
     # for logging purpose only
     if debug:
-        fsc.dump_json_listing(
+        fsw.dump_json_listing(
             listing_non_included,
             tests_data_path / 'Folder3_listing_non_included_in_Folder0.json',
             tests_data_path)
@@ -142,19 +142,19 @@ def test_non_included_fully_included():
 
 def test_non_included_not_fully_included():
     # run
-    listing8, tree8 = fsc.crawl(tests_data_path / 'Folder8')
-    listing0, tree0 = fsc.crawl(tests_data_path / 'Folder0')
-    listing_non_included = fsc.get_non_included(listing8, listing0)
+    listing8, tree8 = fsw.walk(tests_data_path / 'Folder8')
+    listing0, tree0 = fsw.walk(tests_data_path / 'Folder0')
+    listing_non_included = fsw.get_non_included(listing8, listing0)
 
     # for logging purpose only
     if debug:
-        fsc.dump_json_listing(
+        fsw.dump_json_listing(
             listing_non_included,
             tests_data_path / 'Folder8_listing_non_included_in_Folder0.json',
             tests_data_path)
 
     # load expected
-    expected_listing_non_included = fsc.load_json_listing(
+    expected_listing_non_included = fsw.load_json_listing(
         tests_data_path / 'Folder8_listing_non_included_in_Folder0_expected.json',
         tests_data_path)
 
