@@ -5,8 +5,8 @@ import hashlib
 import json
 import os.path
 import pathlib
+import shutil
 import tempfile
-import zipfile
 
 BLOCK_SIZE = 65536  # ie 64 Ko
 FILE_TYPE = 'FILE'
@@ -61,14 +61,12 @@ def _recursive_walk(path, listing, tree, exclusion):
         listing[dir_content_key].add(path)
         tree[path] = dir_content_key
 
-    elif path.suffix == '.zip':
-        with zipfile.ZipFile(path, 'r') as zip_file:
-            temp_dir = tempfile.mkdtemp()
-            zip_file.extractall(temp_dir)
-            temp_path = pathlib.Path(temp_dir)
-            zip_listing, zip_tree = walk(temp_path)
-            append_listing(listing, zip_listing, path, temp_path)
-            append_tree(tree, zip_tree, path, temp_path)
+    elif path.suffix in ['.zip', '.tar', '.gztar', '.bztar', '.xztar']:
+        temp_dir_path = pathlib.Path(tempfile.mkdtemp())
+        shutil.unpack_archive(path, extract_dir=temp_dir_path)
+        zip_listing, zip_tree = walk(temp_dir_path)
+        append_listing(listing, zip_listing, path, temp_dir_path)
+        append_tree(tree, zip_tree, path, temp_dir_path)
 
     elif path.is_file():
         file_hasher = hashlib.md5()
