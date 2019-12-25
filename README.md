@@ -29,7 +29,7 @@ To install Fs-walker from GitHub:
 ```python
 import pathlib
 
-import fs_walker.walk as fsw
+import fs_walker.walker as fsw
 
 folder_path = pathlib.Path('M:/Pictures')
 listing, tree = fsw.walk(folder_path)
