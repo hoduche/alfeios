@@ -37,7 +37,7 @@ setup(
     packages=find_packages(),
     include_package_data=True,
     install_requires=find_requirements(),
-    python_requires='>=3',
+    python_requires='>=3.7',
     entry_points={'console_scripts': ['fs-walk = fs_walker.walker:main']},
     classifiers=[
         "Programming Language :: Python :: 3",
