@@ -218,7 +218,8 @@ def get_non_included(listing, listing_ref):
     return result
 
 
-if __name__ == '__main__':
+def main():
+#    folder_path = pathlib.Path('C:/Users/Henri-Olivier/Desktop/Livres')
     folder_path = pathlib.Path('C:/Users') / 'Henri-Olivier' / 'Desktop'
 #    folder_path = pathlib.Path('M:/PhotosVideos')
     listing, tree = walk(folder_path)
@@ -227,3 +228,7 @@ if __name__ == '__main__':
     duplicates, size_gain = get_duplicates(listing)
     dump_json_listing(duplicates, folder_path / 'duplicates.json')
     print(f'you can gain {size_gain / 1E9:.2f} Gigabytes space')
+
+
+if __name__ == '__main__':
+    main()
