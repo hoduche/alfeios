@@ -123,6 +123,28 @@ def test_duplicates():
     assert size_gain == 367645
 
 
+def test_duplicates_with_zip():
+    # run
+    listing, tree = fsw.walk(tests_data_path)
+    listing_duplicates, size_gain = fsw.get_duplicates(listing)
+
+    # for logging purpose only
+    if debug:
+        fsw.dump_json_listing(
+            listing_duplicates,
+            tests_data_path / 'duplicates.json',
+            tests_data_path)
+
+    # verify
+    k0 = list(listing_duplicates)[0]
+    v0 = listing_duplicates[k0]
+    assert k0 == ('4f8c48630a797715e8b86466e0218aa1', 'DIR', 3598557)
+    assert v0 == {tests_data_path / 'Folder0',
+                  tests_data_path / 'FolderZipFile',
+                  tests_data_path / 'FolderZipFolder',
+                  tests_data_path / 'FolderZipNested'}
+
+
 def test_non_included_fully_included():
     # run
     listing3, tree3 = fsw.walk(tests_data_path / 'Folder0' / 'Folder3')
