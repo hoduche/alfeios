@@ -1,4 +1,3 @@
-import argparse
 import ast
 import collections
 import hashlib
@@ -82,8 +81,20 @@ def _recursive_walk(path, listing, tree, exclusion):
         tree[path] = file_content_key
 
 
-def build_relative_path(absolute_path, start_path):
-    return pathlib.Path(os.path.relpath(absolute_path, start=start_path))
+def get_duplicate(listing):
+    duplicate = {k: v for k, v in listing.items() if len(v) >= 2}
+    size_gain = sum([k[2] * (len(v) - 1) for k, v in duplicate.items()])
+    duplicate_sorted_by_size = {k: v for (k, v) in sorted(duplicate.items(),
+                                                           key=lambda i: i[0][2],
+                                                           reverse=True)}
+    result = collections.defaultdict(set, duplicate_sorted_by_size)
+    return result, size_gain
+
+
+def get_missing(old_listing, new_listing):
+    non_included = {k: v for k, v in old_listing.items() if k not in new_listing}
+    result = collections.defaultdict(set, non_included)
+    return result
 
 
 def dump_json_listing(listing, file_path, start_path=None):
@@ -107,7 +118,7 @@ def dump_json_listing(listing, file_path, start_path=None):
     file_path.write_text(json_listing)
 
 
-def load_json_listing(file_path, start_path):
+def load_json_listing(file_path, start_path=None):
     """
     :param file_path: path to an existing json serialized listing
     :type file_path: pathlib.Path
@@ -151,7 +162,7 @@ def dump_json_tree(tree, file_path, start_path=None):
     file_path.write_text(json_tree)
 
 
-def load_json_tree(file_path, start_path):
+def load_json_tree(file_path, start_path=None):
     """
     :param file_path: path to an existing json serialized tree
     :type file_path: pathlib.Path
@@ -186,6 +197,10 @@ def unify(listings, trees):
     return listing, tree
 
 
+def build_relative_path(absolute_path, start_path):
+    return pathlib.Path(os.path.relpath(absolute_path, start=start_path))
+
+
 def append_listing(listing, additional_listing, start_path, temp_path):
     for tuple_key, path_set in additional_listing.items():
         for each_path in path_set:
@@ -199,45 +214,3 @@ def append_tree(tree, additional_tree, start_path, temp_path):
         relative_path_key = build_relative_path(path_key, temp_path)
         absolute_path_key = start_path / relative_path_key
         tree[absolute_path_key] = tuple_value
-
-
-def get_duplicates(listing):
-    duplicates = {k: v for k, v in listing.items() if len(v) >= 2}
-    size_gain = sum([k[2] * (len(v) - 1) for k, v in duplicates.items()])
-    duplicates_sorted_by_size = {k: v for (k, v) in sorted(duplicates.items(),
-                                                           key=lambda i: i[0][2],
-                                                           reverse=True)}
-    result = collections.defaultdict(set, duplicates_sorted_by_size)
-    return result, size_gain
-
-
-def get_non_included(listing, listing_ref):
-    non_included = {k: v for k, v in listing.items() if k not in listing_ref}
-    result = collections.defaultdict(set, non_included)
-    return result
-
-
-def main():
-    example_text = '''examples:
-    fs-walk -p D:/Pictures
-    '''
-
-    arg_parser = argparse.ArgumentParser(prog='fs-walk',
-                                         description='Walk your file system to check duplicated files',
-                                         epilog=example_text,
-                                         formatter_class=argparse.RawTextHelpFormatter)
-    arg_parser.add_argument('-p', '--path', type=str, action='store', default='.',
-                            help='path to your git repository (default is here)')
-    args = arg_parser.parse_args()
-
-    folder_path = pathlib.Path(args.path)
-    listing, tree = walk(folder_path)
-    dump_json_listing(listing, folder_path / 'listing.json')
-    dump_json_tree(tree, folder_path / 'tree.json')
-    duplicates, size_gain = get_duplicates(listing)
-    dump_json_listing(duplicates, folder_path / 'duplicates.json')
-    print(f'you can gain {size_gain / 1E9:.2f} Gigabytes space by going through duplicates.json')
-
-
-if __name__ == '__main__':
-    main()

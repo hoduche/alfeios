@@ -101,43 +101,43 @@ def test_unify():
     assert tree == tree0_full
 
 
-def test_duplicates():
+def test_duplicate():
     # run
     listing, tree = fsw.walk(tests_data_path / 'Folder0' / 'Folder3')
-    listing_duplicates, size_gain = fsw.get_duplicates(listing)
+    duplicate_listing, size_gain = fsw.get_duplicate(listing)
 
     # for logging purpose only
     if debug:
         fsw.dump_json_listing(
-            listing_duplicates,
-            tests_data_path / 'Folder3_listing_duplicates.json',
+            duplicate_listing,
+            tests_data_path / 'Folder3_duplicate_listing.json',
             tests_data_path)
 
     # load expected
-    expected_listing_duplicates = fsw.load_json_listing(
-        tests_data_path / 'Folder3_listing_duplicates_expected.json',
+    expected_duplicate_listing = fsw.load_json_listing(
+        tests_data_path / 'Folder3_duplicate_listing_expected.json',
         tests_data_path)
 
     # verify
-    assert listing_duplicates == expected_listing_duplicates
+    assert duplicate_listing == expected_duplicate_listing
     assert size_gain == 367645
 
 
-def test_duplicates_with_zip():
+def test_duplicate_with_zip():
     # run
     listing, tree = fsw.walk(tests_data_path)
-    listing_duplicates, size_gain = fsw.get_duplicates(listing)
+    duplicate_listing, size_gain = fsw.get_duplicate(listing)
 
     # for logging purpose only
     if debug:
         fsw.dump_json_listing(
-            listing_duplicates,
-            tests_data_path / 'duplicates.json',
+            duplicate_listing,
+            tests_data_path / 'duplicate.json',
             tests_data_path)
 
     # verify
-    k0 = list(listing_duplicates)[0]
-    v0 = listing_duplicates[k0]
+    k0 = list(duplicate_listing)[0]
+    v0 = duplicate_listing[k0]
     assert k0 == ('4f8c48630a797715e8b86466e0218aa1', 'DIR', 3598557)
     assert v0 == {tests_data_path / 'Folder0',
                   tests_data_path / 'FolderZipFile',
@@ -145,40 +145,40 @@ def test_duplicates_with_zip():
                   tests_data_path / 'FolderZipNested'}
 
 
-def test_non_included_fully_included():
+def test_missing_fully_included():
     # run
     listing3, tree3 = fsw.walk(tests_data_path / 'Folder0' / 'Folder3')
     listing0, tree0 = fsw.walk(tests_data_path / 'Folder0')
-    listing_non_included = fsw.get_non_included(listing3, listing0)
+    missing_listing = fsw.get_missing(listing3, listing0)
 
     # for logging purpose only
     if debug:
         fsw.dump_json_listing(
-            listing_non_included,
-            tests_data_path / 'Folder3_listing_non_included_in_Folder0.json',
+            missing_listing,
+            tests_data_path / 'Folder3_missing_listing_in_Folder0.json',
             tests_data_path)
 
     # verify
-    assert listing_non_included == {}
+    assert missing_listing == {}
 
 
-def test_non_included_not_fully_included():
+def test_missing_not_fully_included():
     # run
     listing8, tree8 = fsw.walk(tests_data_path / 'Folder8')
     listing0, tree0 = fsw.walk(tests_data_path / 'Folder0')
-    listing_non_included = fsw.get_non_included(listing8, listing0)
+    missing_listing = fsw.get_missing(listing8, listing0)
 
     # for logging purpose only
     if debug:
         fsw.dump_json_listing(
-            listing_non_included,
-            tests_data_path / 'Folder8_listing_non_included_in_Folder0.json',
+            missing_listing,
+            tests_data_path / 'Folder8_missing_listing_in_Folder0.json',
             tests_data_path)
 
     # load expected
-    expected_listing_non_included = fsw.load_json_listing(
-        tests_data_path / 'Folder8_listing_non_included_in_Folder0_expected.json',
+    expected_missing_listing = fsw.load_json_listing(
+        tests_data_path / 'Folder8_missing_listing_in_Folder0_expected.json',
         tests_data_path)
 
     # verify
-    assert listing_non_included == expected_listing_non_included
+    assert missing_listing == expected_missing_listing
