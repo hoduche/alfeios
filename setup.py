@@ -30,6 +30,7 @@ setup(
     long_description=find_readme(),
     long_description_content_type='text/markdown',
     url='https://github.com/hoduche/fs-walker',
+    download_url='https://github.com/hoduche/fs-walker/archive/v0.0.1.tar.gz',
     author='Henri-Olivier Duché',
     author_email='hoduche@yahoo.fr',
     license='MIT',
