@@ -69,7 +69,7 @@ def _recursive_walk(path, listing, tree, exclusion):
 
     elif path.is_file():
         file_hasher = hashlib.md5()
-        with open(path, mode='rb') as file_content:
+        with path.open(mode='rb') as file_content:
             content_stream = file_content.read(BLOCK_SIZE)
             while len(content_stream) > 0:
                 file_hasher.update(content_stream)
