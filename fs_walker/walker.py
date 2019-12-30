@@ -62,7 +62,7 @@ def _recursive_walk(path, listing, tree, exclusion):
 
     elif path.suffix in ['.zip', '.tar', '.gztar', '.bztar', '.xztar']:
         temp_dir_path = pathlib.Path(tempfile.mkdtemp())
-        shutil.unpack_archive(path, extract_dir=temp_dir_path)
+        shutil.unpack_archive(str(path), extract_dir=temp_dir_path)
         zip_listing, zip_tree = walk(temp_dir_path)
         append_listing(listing, zip_listing, path, temp_dir_path)
         append_tree(tree, zip_tree, path, temp_dir_path)

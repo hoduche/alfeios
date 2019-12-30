@@ -38,7 +38,7 @@ setup(
     packages=find_packages(),
     include_package_data=True,
     install_requires=find_requirements(),
-    python_requires='>=3.7',
+    python_requires='>=3.4',
     entry_points={'console_scripts': ['duplicate = fs_walker.duplicate:duplicate',
                                       'missing = fs_walker.missing:missing']},
     classifiers=[
