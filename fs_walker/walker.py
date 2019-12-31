@@ -3,15 +3,9 @@ import collections
 import hashlib
 import json
 import os.path
+import pathlib
 import shutil
-import sys
 import tempfile
-
-if sys.version_info >= (3, 4):
-    import pathlib
-else:
-    import pathlib2 as pathlib
-
 
 BLOCK_SIZE = 65536  # ie 64 Ko
 FILE_TYPE = 'FILE'
@@ -68,7 +62,7 @@ def _recursive_walk(path, listing, tree, exclusion):
 
     elif path.suffix in ['.zip', '.tar', '.gztar', '.bztar', '.xztar']:
         temp_dir_path = pathlib.Path(tempfile.mkdtemp())
-        shutil.unpack_archive(str(path), extract_dir=temp_dir_path)
+        shutil.unpack_archive(str(path), extract_dir=str(temp_dir_path))  # v3.7 accepts pathlib
         zip_listing, zip_tree = walk(temp_dir_path)
         append_listing(listing, zip_listing, path, temp_dir_path)
         append_tree(tree, zip_tree, path, temp_dir_path)

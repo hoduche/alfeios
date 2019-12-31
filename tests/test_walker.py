@@ -1,8 +1,4 @@
-import sys
-if sys.version_info >= (3, 4):
-    import pathlib
-else:
-    import pathlib2 as pathlib
+import pathlib
 
 import pytest
 
@@ -10,7 +6,7 @@ import fs_walker.walker as fsw
 
 debug = False
 
-tests_data_path = pathlib.Path(__file__).resolve().expanduser().parent / 'data'
+tests_data_path = pathlib.Path(__file__).parent / 'data'
 
 folders = [('Folder0', 'Folder0'),
            ('Folder0/Folder3', 'Folder3'),

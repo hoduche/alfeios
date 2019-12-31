@@ -1,8 +1,4 @@
-import sys
-if sys.version_info >= (3, 4):
-    import pathlib
-else:
-    import pathlib2 as pathlib
+import pathlib
 
 import fs_walker.walker as fsw
 
