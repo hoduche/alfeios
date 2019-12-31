@@ -198,7 +198,7 @@ def unify(listings, trees):
 
 
 def build_relative_path(absolute_path, start_path):
-    return pathlib.Path(os.path.relpath(absolute_path, start=start_path))
+    return pathlib.Path(os.path.relpath(str(absolute_path), start=str(start_path)))  # v3.6 accepts pathlib
 
 
 def append_listing(listing, additional_listing, start_path, temp_path):
