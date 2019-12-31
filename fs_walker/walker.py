@@ -50,7 +50,7 @@ def _recursive_walk(path, listing, tree, exclusion):
         dir_content_size = 0
         dir_content_hash_list = []
         for each_child in path.iterdir():
-            if each_child.name not in exclusion:
+            if each_child.name not in exclusion and not each_child.is_symlink():
                 _recursive_walk(each_child, listing, tree, exclusion)
                 dir_content_size += tree[each_child][2]
                 dir_content_hash_list.append(tree[each_child][0])
@@ -60,25 +60,32 @@ def _recursive_walk(path, listing, tree, exclusion):
         listing[dir_content_key].add(path)
         tree[path] = dir_content_key
 
-    elif path.suffix in ['.zip', '.tar', '.gztar', '.bztar', '.xztar']:
-        temp_dir_path = pathlib.Path(tempfile.mkdtemp())
-        shutil.unpack_archive(str(path), extract_dir=str(temp_dir_path))  # v3.7 accepts pathlib
-        zip_listing, zip_tree = walk(temp_dir_path)
-        append_listing(listing, zip_listing, path, temp_dir_path)
-        append_tree(tree, zip_tree, path, temp_dir_path)
+    elif path.is_file() and path.suffix in ['.zip', '.tar', '.gztar', '.bztar', '.xztar']:
+        try:
+            temp_dir_path = pathlib.Path(tempfile.mkdtemp())
+            shutil.unpack_archive(str(path), extract_dir=str(temp_dir_path))  # v3.7 accepts pathlib
+            zip_listing, zip_tree = walk(temp_dir_path)
+            append_listing(listing, zip_listing, path, temp_dir_path)
+            append_tree(tree, zip_tree, path, temp_dir_path)
+        except shutil.ReadError:
+            hash_and_index_file(path, listing, tree)
 
     elif path.is_file():
-        file_hasher = hashlib.md5()
-        with path.open(mode='rb') as file_content:
+        hash_and_index_file(path, listing, tree)
+
+
+def hash_and_index_file(path, listing, tree):
+    file_hasher = hashlib.md5()
+    with path.open(mode='rb') as file_content:
+        content_stream = file_content.read(BLOCK_SIZE)
+        while len(content_stream) > 0:
+            file_hasher.update(content_stream)
             content_stream = file_content.read(BLOCK_SIZE)
-            while len(content_stream) > 0:
-                file_hasher.update(content_stream)
-                content_stream = file_content.read(BLOCK_SIZE)
-        file_content_hash = file_hasher.hexdigest()
-        file_content_size = path.stat().st_size
-        file_content_key = (file_content_hash, FILE_TYPE, file_content_size)
-        listing[file_content_key].add(path)
-        tree[path] = file_content_key
+    file_content_hash = file_hasher.hexdigest()
+    file_content_size = path.stat().st_size
+    file_content_key = (file_content_hash, FILE_TYPE, file_content_size)
+    listing[file_content_key].add(path)
+    tree[path] = file_content_key
 
 
 def get_duplicate(listing):
