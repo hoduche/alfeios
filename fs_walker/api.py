@@ -40,8 +40,19 @@ def duplicate(path, dump_listing=False):
 
     duplicate_listing, size_gain = fsw.get_duplicate(listing)
     if duplicate_listing:
+        foreword = 'You can gain '
+        afterword = 'bytes space by going through duplicate_listing.json'
         fsw.dump_json_listing(duplicate_listing, folder_path / 'duplicate_listing.json')
-        print(f'you can gain {size_gain / 1E9:.2f} Gigabytes space by going through duplicate.json')
+        if size_gain < 1E3:
+            print(foreword + f'{size_gain} ' + afterword)
+        elif size_gain < 1E6:
+            print(foreword + f'{size_gain / 1E3:.2f} Kilo' + afterword)
+        elif size_gain < 1E9:
+            print(foreword + f'{size_gain / 1E6:.2f} Mega' + afterword)
+        elif size_gain < 1E12:
+            print(foreword + f'{size_gain / 1E9:.2f} Giga' + afterword)
+        else:
+            print(foreword + f'{size_gain / 1E12:.2f} Tera' + afterword)
     else:
         print(f'Congratulations there is no duplicate here')
 
@@ -83,6 +94,7 @@ def missing(old_path, new_path, dump_listing=False):
             fsw.dump_json_listing(old_listing, old_folder_path / 'listing.json')
             fsw.dump_json_tree(old_tree, old_folder_path / 'tree.json')
     else:
+        print(f'Old is not a valid path - exiting')
         return
 
     new_path = pathlib.Path(new_path)
@@ -96,7 +108,13 @@ def missing(old_path, new_path, dump_listing=False):
             fsw.dump_json_listing(new_listing, new_folder_path / 'listing.json')
             fsw.dump_json_tree(new_tree, new_folder_path / 'tree.json')
     else:
+        print(f'New is not a valid path - exiting')
         return
 
     missing_listing = fsw.get_missing(old_listing, new_listing)
-    fsw.dump_json_listing(missing_listing, new_folder_path / 'missing_listing.json')
+    if missing_listing:
+        fsw.dump_json_listing(missing_listing, new_folder_path / 'missing_listing.json')
+        print(f'There are {len(missing_listing)} Old files missing in New'
+               ' - please go through missing_listing.json')
+    else:
+        print(f'Congratulations Old content is totally included in New')

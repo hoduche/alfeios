@@ -99,7 +99,8 @@ def get_duplicate(listing):
 
 
 def get_missing(old_listing, new_listing):
-    non_included = {k: v for k, v in old_listing.items() if k not in new_listing}
+    non_included = {k: v for k, v in old_listing.items() if (k not in new_listing
+                                                             and k[1] == FILE_TYPE)}
     result = collections.defaultdict(set, non_included)
     return result
 
