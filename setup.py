@@ -6,17 +6,17 @@ from setuptools import setup, find_packages
 
 
 def find_readme():
-    with open('README.md', encoding='utf-8') as readme_file:
+    with open('README.md') as readme_file:
         return readme_file.read()
 
 
 def find_requirements():
-    with open('requirements.txt', encoding='utf-8') as requirements_file:
+    with open('requirements.txt') as requirements_file:
         return [each_line.strip() for each_line in requirements_file.read().splitlines()]
 
 
 def find_version():
-    with open('fs_walker/__init__.py', encoding='utf-8') as version_file:
+    with open('fs_walker/__init__.py') as version_file:
         pattern = '^__version__ = [\'\"]([^\'\"]*)[\'\"]'
         match = re.search(pattern, version_file.readline().strip())
         if match:
