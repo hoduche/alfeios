@@ -35,11 +35,15 @@ def duplicate(path, dump_listing=False):
             fsw.dump_json_listing(listing, folder_path / 'listing.json')
             fsw.dump_json_tree(tree, folder_path / 'tree.json')
     else:
+        print(f'This is not a valid path - exiting')
         return
 
     duplicate_listing, size_gain = fsw.get_duplicate(listing)
-    fsw.dump_json_listing(duplicate_listing, folder_path / 'duplicate_listing.json')
-    print(f'you can gain {size_gain / 1E9:.2f} Gigabytes space by going through duplicate.json')
+    if duplicate_listing:
+        fsw.dump_json_listing(duplicate_listing, folder_path / 'duplicate_listing.json')
+        print(f'you can gain {size_gain / 1E9:.2f} Gigabytes space by going through duplicate.json')
+    else:
+        print(f'Congratulations there is no duplicate here')
 
 
 def missing(old_path, new_path, dump_listing=False):
