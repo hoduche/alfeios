@@ -136,13 +136,11 @@ def test_duplicate_with_zip():
             tests_data_path)
 
     # verify
-    k0 = list(duplicate_listing)[0]
-    v0 = duplicate_listing[k0]
-    assert k0 == ('4f8c48630a797715e8b86466e0218aa1', 'DIR', 3598557)
-    assert v0 == {tests_data_path / 'Folder0',
-                  tests_data_path / 'FolderZipFile',
-                  tests_data_path / 'FolderZipFolder',
-                  tests_data_path / 'FolderZipNested'}
+    assert duplicate_listing[('4f8c48630a797715e8b86466e0218aa1', 'DIR', 3598557)] == \
+           {tests_data_path / 'Folder0',
+            tests_data_path / 'FolderZipFile',
+            tests_data_path / 'FolderZipFolder',
+            tests_data_path / 'FolderZipNested'}
 
 
 def test_missing_fully_included():
