@@ -3,9 +3,15 @@ import collections
 import hashlib
 import json
 import os.path
-import pathlib
 import shutil
+import sys
 import tempfile
+
+if sys.version_info >= (3, 4):
+    import pathlib
+else:
+    import pathlib2 as pathlib
+
 
 BLOCK_SIZE = 65536  # ie 64 Ko
 FILE_TYPE = 'FILE'
