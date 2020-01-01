@@ -69,5 +69,5 @@ import pathlib
 import fs_walker.walker as fsw
 
 folder_path = pathlib.Path('D:/Pictures')
-listing, tree = fsw.walk(folder_path)
+listing, tree, forbidden = fsw.walk(folder_path)
 ```

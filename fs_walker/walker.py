@@ -39,21 +39,25 @@ def walk(path, exclusion=None):
 
     listing = collections.defaultdict(set)
     tree = dict()
+    forbidden = set()
 
-    _recursive_walk(path, listing, tree, exclusion)
+    _recursive_walk(path, listing, tree, forbidden, exclusion)
 
-    return listing, tree
+    return listing, tree, forbidden
 
 
-def _recursive_walk(path, listing, tree, exclusion):
+def _recursive_walk(path, listing, tree, forbidden, exclusion):
     if path.is_dir():
         dir_content_size = 0
         dir_content_hash_list = []
         for each_child in path.iterdir():
-            if each_child.name not in exclusion and not each_child.is_symlink():
-                _recursive_walk(each_child, listing, tree, exclusion)
-                dir_content_size += tree[each_child][2]
-                dir_content_hash_list.append(tree[each_child][0])
+            try:
+                if each_child.name not in exclusion and not each_child.is_symlink():
+                    _recursive_walk(each_child, listing, tree, forbidden, exclusion)
+                    dir_content_size += tree[each_child][2]
+                    dir_content_hash_list.append(tree[each_child][0])
+            except PermissionError:
+                forbidden.add(each_child)
         dir_content = '\n'.join(sorted(dir_content_hash_list))
         dir_content_hash = hashlib.md5(dir_content.encode()).hexdigest()
         dir_content_key = (dir_content_hash, DIR_TYPE, dir_content_size)
@@ -64,9 +68,10 @@ def _recursive_walk(path, listing, tree, exclusion):
         try:
             temp_dir_path = pathlib.Path(tempfile.mkdtemp())
             shutil.unpack_archive(str(path), extract_dir=str(temp_dir_path))  # v3.7 accepts pathlib
-            zip_listing, zip_tree = walk(temp_dir_path)
+            zip_listing, zip_tree, zip_forbidden = walk(temp_dir_path)
             append_listing(listing, zip_listing, path, temp_dir_path)
             append_tree(tree, zip_tree, path, temp_dir_path)
+            append_forbidden(forbidden, zip_forbidden, path, temp_dir_path)
         except shutil.ReadError:
             hash_and_index_file(path, listing, tree)
 
@@ -107,8 +112,8 @@ def get_missing(old_listing, new_listing):
 
 def dump_json_listing(listing, file_path, start_path=None):
     """
-    :param: listing to serialize in json
-    :rtype: collections.defaultdict(set) = {(hash, type, int): {pathlib.Path}}
+    :param listing: listing to serialize in json
+    :rtype listing: collections.defaultdict(set) = {(hash, type, int): {pathlib.Path}}
 
     :param file_path: path to create the json serialized listing
     :type file_path: pathlib.Path
@@ -123,7 +128,7 @@ def dump_json_listing(listing, file_path, start_path=None):
     serializable_listing = {str(tuple_key): [str(pathlib.PurePosixPath(path)) for path in path_set]
                             for tuple_key, path_set in listing.items()}
     json_listing = json.dumps(serializable_listing)
-    file_path.write_text(json_listing)
+    write_json(json_listing, file_path)
 
 
 def load_json_listing(file_path, start_path=None):
@@ -151,8 +156,8 @@ def load_json_listing(file_path, start_path=None):
 
 def dump_json_tree(tree, file_path, start_path=None):
     """
-    :param: tree to serialize in json
-    :rtype: dict = {pathlib.Path: (hash, type, int)}
+    :param tree: tree to serialize in json
+    :rtype tree: dict = {pathlib.Path: (hash, type, int)}
 
     :param file_path: path to create the json serialized tree
     :type file_path: pathlib.Path
@@ -167,7 +172,7 @@ def dump_json_tree(tree, file_path, start_path=None):
     serializable_tree = {str(pathlib.PurePosixPath(path_key)): tuple_value
                          for path_key, tuple_value in tree.items()}
     json_tree = json.dumps(serializable_tree)
-    file_path.write_text(json_tree)
+    write_json(json_tree, file_path)
 
 
 def load_json_tree(file_path, start_path=None):
@@ -190,23 +195,55 @@ def load_json_tree(file_path, start_path=None):
     return tree
 
 
-def unify(listings, trees):
+def dump_json_forbidden(forbidden, file_path, start_path=None):
+    """
+    :param forbidden: forbidden to serialize in json
+    :rtype forbidden: set = {pathlib.Path}
+
+    :param file_path: path to create the json serialized forbidden
+    :type file_path: pathlib.Path
+
+    :param start_path: start path to remove from each path in the json serialized forbidden
+    :type start_path: pathlib.Path
+    """
+
+    if start_path:
+        forbidden = {build_relative_path(path, start_path) for path in forbidden}
+    serializable_forbidden = [str(pathlib.PurePosixPath(path)) for path in forbidden]
+    json_forbidden = json.dumps(serializable_forbidden)
+    write_json(json_forbidden, file_path)
+
+
+def unify(listings, trees, forbiddens):
     tree = dict()  # = {pathlib.Path: (hash, type, int)}
     for each_tree in trees:
         for k, v in each_tree.items():
             if (not k in tree) or (tree[k][2] < v[2]):
                 tree[k] = v
     listing = collections.defaultdict(set)  # = {(hash, type, int): {pathlib.Path}}
+
     for each_listing in listings:
         for k, v in each_listing.items():
             for each_v in v:
                 if tree[each_v] == k:
                     listing[k].add(each_v)
-    return listing, tree
+    forbidden = set()
+
+    for each_forbidden in forbiddens:
+        forbidden.update(each_forbidden)
+
+    return listing, tree, forbidden
 
 
 def build_relative_path(absolute_path, start_path):
     return pathlib.Path(os.path.relpath(str(absolute_path), start=str(start_path)))  # v3.6 accepts pathlib
+
+
+def write_json(json_string, file_path):
+    try:
+        file_path.write_text(json_string)
+    except PermissionError:
+        print(f'Not authorized to write {file_path.name} on {file_path.parent}')
 
 
 def append_listing(listing, additional_listing, start_path, temp_path):
@@ -222,3 +259,10 @@ def append_tree(tree, additional_tree, start_path, temp_path):
         relative_path_key = build_relative_path(path_key, temp_path)
         absolute_path_key = start_path / relative_path_key
         tree[absolute_path_key] = tuple_value
+
+
+def append_forbidden(forbidden, additional_forbidden, start_path, temp_path):
+    for path in additional_forbidden:
+        relative_path = build_relative_path(path, temp_path)
+        absolute_path = start_path / relative_path
+        forbidden.add(absolute_path)

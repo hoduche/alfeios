@@ -19,7 +19,7 @@ names = [each[1] for each in folders]
 @pytest.mark.parametrize('folder, name', folders, ids=names)
 def test_walk(folder, name):
     # run
-    listing, tree = fsw.walk(tests_data_path / folder)
+    listing, tree, forbidden = fsw.walk(tests_data_path / folder)
 
     # for logging purpose only
     if debug:
@@ -30,6 +30,10 @@ def test_walk(folder, name):
         fsw.dump_json_tree(
             tree,
             tests_data_path / (name + '_tree.json'),
+            tests_data_path)
+        fsw.dump_json_forbidden(
+            forbidden,
+            tests_data_path / (name + '_forbidden.json'),
             tests_data_path)
 
     # load expected
@@ -52,13 +56,14 @@ def test_walk(folder, name):
                               tests_data_path / 'expected_listing.json')
     assert listing == expected_listing
     assert tree == expected_tree
+    assert forbidden == set()
 
 
 def test_walk_with_exclusions():
     # run
-    listing, tree = fsw.walk(tests_data_path / 'Folder0',
-                              exclusion=['Folder3', 'Folder4_1',
-                                         'file3.txt', 'groundhog.png'])
+    listing, tree, forbidden = fsw.walk(tests_data_path / 'Folder0',
+                                        exclusion=['Folder3', 'Folder4_1',
+                                                   'file3.txt', 'groundhog.png'])
 
     # for logging purpose only
     if debug:
@@ -69,6 +74,10 @@ def test_walk_with_exclusions():
         fsw.dump_json_tree(
             tree,
             tests_data_path / 'Folder0_tree_with_exclusions.json',
+            tests_data_path)
+        fsw.dump_json_forbidden(
+            forbidden,
+            tests_data_path / 'Folder0_forbidden_with_exclusions.json',
             tests_data_path)
 
     # load expected
@@ -82,15 +91,18 @@ def test_walk_with_exclusions():
     # verify
     assert listing == expected_listing
     assert tree == expected_tree
+    assert forbidden == set()
 
 
 def test_unify():
     # run
-    listing0_no3, tree0_no3 = fsw.walk(
+    listing0_no3, tree0_no3, forbidden0_no3 = fsw.walk(
         tests_data_path / 'Folder0', exclusion=['Folder3'])
-    listing3, tree3 = fsw.walk(tests_data_path / 'Folder0' / 'Folder3')
-    listing, tree = fsw.unify([listing0_no3, listing3], [tree0_no3, tree3])
-    listing0_full, tree0_full = fsw.walk(tests_data_path / 'Folder0')
+    listing3, tree3, forbidden3 = fsw.walk(tests_data_path / 'Folder0' / 'Folder3')
+    listing, tree, forbidden = fsw.unify([listing0_no3, listing3],
+                                         [tree0_no3, tree3],
+                                         [forbidden0_no3, forbidden3])
+    listing0_full, tree0_full, forbidden0_full = fsw.walk(tests_data_path / 'Folder0')
 
     # verify
     listing.pop(('7e472b2b54ba97314c63988db267d125', 'DIR', 2698920))
@@ -99,11 +111,12 @@ def test_unify():
     tree.pop(tests_data_path / 'Folder0')
     tree0_full.pop(tests_data_path / 'Folder0')
     assert tree == tree0_full
+    assert forbidden == forbidden0_full
 
 
 def test_duplicate():
     # run
-    listing, tree = fsw.walk(tests_data_path / 'Folder0' / 'Folder3')
+    listing, tree, forbidden = fsw.walk(tests_data_path / 'Folder0' / 'Folder3')
     duplicate_listing, size_gain = fsw.get_duplicate(listing)
 
     # for logging purpose only
@@ -125,7 +138,7 @@ def test_duplicate():
 
 def test_duplicate_with_zip():
     # run
-    listing, tree = fsw.walk(tests_data_path)
+    listing, tree, forbidden = fsw.walk(tests_data_path)
     duplicate_listing, size_gain = fsw.get_duplicate(listing)
 
     # for logging purpose only
@@ -145,8 +158,8 @@ def test_duplicate_with_zip():
 
 def test_missing_fully_included():
     # run
-    listing3, tree3 = fsw.walk(tests_data_path / 'Folder0' / 'Folder3')
-    listing0, tree0 = fsw.walk(tests_data_path / 'Folder0')
+    listing3, tree3, forbidden3 = fsw.walk(tests_data_path / 'Folder0' / 'Folder3')
+    listing0, tree0, forbidden0 = fsw.walk(tests_data_path / 'Folder0')
     missing_listing = fsw.get_missing(listing3, listing0)
 
     # for logging purpose only
@@ -162,8 +175,8 @@ def test_missing_fully_included():
 
 def test_missing_not_fully_included():
     # run
-    listing8, tree8 = fsw.walk(tests_data_path / 'Folder8')
-    listing0, tree0 = fsw.walk(tests_data_path / 'Folder0')
+    listing8, tree8, forbidden8 = fsw.walk(tests_data_path / 'Folder8')
+    listing0, tree0, forbidden0 = fsw.walk(tests_data_path / 'Folder0')
     missing_listing = fsw.get_missing(listing8, listing0)
 
     # for logging purpose only
