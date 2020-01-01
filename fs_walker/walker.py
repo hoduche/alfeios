@@ -54,8 +54,9 @@ def _recursive_walk(path, listing, tree, forbidden, exclusion):
             try:
                 if each_child.name not in exclusion and not each_child.is_symlink():
                     _recursive_walk(each_child, listing, tree, forbidden, exclusion)
-                    dir_content_size += tree[each_child][2]
-                    dir_content_hash_list.append(tree[each_child][0])
+                    if each_child not in forbidden:
+                        dir_content_size += tree[each_child][2]
+                        dir_content_hash_list.append(tree[each_child][0])
             except PermissionError:
                 forbidden.add(each_child)
         dir_content = '\n'.join(sorted(dir_content_hash_list))
@@ -77,6 +78,9 @@ def _recursive_walk(path, listing, tree, forbidden, exclusion):
 
     elif path.is_file():
         hash_and_index_file(path, listing, tree)
+
+    else:
+        forbidden.add(path)
 
 
 def hash_and_index_file(path, listing, tree):
