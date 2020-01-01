@@ -57,7 +57,7 @@ def _recursive_walk(path, listing, tree, forbidden, exclusion):
                     if each_child not in forbidden:
                         dir_content_size += tree[each_child][2]
                         dir_content_hash_list.append(tree[each_child][0])
-            except PermissionError:
+            except PermissionError as e:
                 forbidden.add(each_child)
         dir_content = '\n'.join(sorted(dir_content_hash_list))
         dir_content_hash = hashlib.md5(dir_content.encode()).hexdigest()
@@ -73,7 +73,8 @@ def _recursive_walk(path, listing, tree, forbidden, exclusion):
             append_listing(listing, zip_listing, path, temp_dir_path)
             append_tree(tree, zip_tree, path, temp_dir_path)
             append_forbidden(forbidden, zip_forbidden, path, temp_dir_path)
-        except shutil.ReadError:
+        except (shutil.ReadError, OSError) as e:
+            forbidden.add(path)
             hash_and_index_file(path, listing, tree)
 
     elif path.is_file():
@@ -246,7 +247,7 @@ def build_relative_path(absolute_path, start_path):
 def write_json(json_string, file_path):
     try:
         file_path.write_text(json_string)
-    except PermissionError:
+    except PermissionError as e:
         print(f'Not authorized to write {file_path.name} on {file_path.parent}')
 
 
