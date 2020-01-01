@@ -57,7 +57,8 @@ def _recursive_walk(path, listing, tree, forbidden, exclusion):
                     if each_child not in forbidden:
                         dir_content_size += tree[each_child][2]
                         dir_content_hash_list.append(tree[each_child][0])
-            except PermissionError as e:
+            except (PermissionError, Exception) as e:
+                print(f'!!!!!!!!!!!!!!!!!!!!!! Exception: {type(e)} on: {each_child}')
                 forbidden.add(each_child)
         dir_content = '\n'.join(sorted(dir_content_hash_list))
         dir_content_hash = hashlib.md5(dir_content.encode()).hexdigest()
@@ -73,7 +74,8 @@ def _recursive_walk(path, listing, tree, forbidden, exclusion):
             append_listing(listing, zip_listing, path, temp_dir_path)
             append_tree(tree, zip_tree, path, temp_dir_path)
             append_forbidden(forbidden, zip_forbidden, path, temp_dir_path)
-        except (shutil.ReadError, OSError) as e:
+        except (shutil.ReadError, OSError, Exception) as e:
+            print(f'!!!!!!!!!!!!!!!!!!!!!! Exception: {type(e)} on: {path}')
             forbidden.add(path)
             hash_and_index_file(path, listing, tree)
 
