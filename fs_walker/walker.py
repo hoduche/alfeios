@@ -249,7 +249,7 @@ def build_relative_path(absolute_path, start_path):
 def write_json(json_string, file_path):
     try:
         file_path.write_text(json_string)
-    except PermissionError as e:
+    except (PermissionError, Exception) as e:
         print(f'Not authorized to write {file_path.name} on {file_path.parent}')
 
 
