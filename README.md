@@ -13,28 +13,29 @@ Fs-walker can walk your two drives and list all files on the old one that are no
 
 ## Install
 
-#### From PyPI
-To install Fs-walker from PyPI, just run:
-
+#### For everybody (from PyPI)
 ```
 pip install fs-walker
 ```
 
-#### From GitHub
-To install Fs-walker from GitHub:
-1. Run:
-    ```
-    git clone https://github.com/hoduche/fs-walker
-    ```
-2. Inside the newly created fs-walker folder, run (with Python 3 and setuptools):
-    ```
-    python setup.py install
-    ```
+#### For developers (from GitHub)
+```
+git clone https://github.com/hoduche/fs-walker
+```
+And from the newly created fs-walker directory, run:
+```
+pip install -e .
+```
 
 ## Run
 
-#### As a command
-Upon installation, Fs-walker adds two commands to the command line: `duplicate` and `missing`.
+#### For everybody (as a command)
+Upon installation, Fs-walker adds two commands to your
+[command line interface shell](https://en.wikipedia.org/wiki/Command-line_interface):
+`duplicate` and `missing`.
+
+This works on all Operating Systems thanks to the magic of
+[Python entry points](https://amir.rachum.com/blog/2017/07/28/python-entry-points)
 
 Running `duplicate` will:
 1. List all duplicated files and directories in a root directory passed as the --path (or -p) argument
@@ -61,7 +62,7 @@ Example:
 missing -o D:/Pictures -n E:/AllPictures -d
 ```
 
-#### As a Python module
+#### For developers (as a Python module)
 
 ```python
 import pathlib

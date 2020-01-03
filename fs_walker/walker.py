@@ -77,16 +77,16 @@ def _recursive_walk(path, listing, tree, forbidden, exclusion):
         except (shutil.ReadError, OSError, Exception) as e:
             print(f'!!!!!!!!!!!!!!!!!!!!!! Exception: {type(e)} on: {path}')
             forbidden.add(path)
-            hash_and_index_file(path, listing, tree)
+            _hash_and_index_file(path, listing, tree)
 
     elif path.is_file():
-        hash_and_index_file(path, listing, tree)
+        _hash_and_index_file(path, listing, tree)
 
     else:
         forbidden.add(path)
 
 
-def hash_and_index_file(path, listing, tree):
+def _hash_and_index_file(path, listing, tree):
     file_hasher = hashlib.md5()
     with path.open(mode='rb') as file_content:
         content_stream = file_content.read(BLOCK_SIZE)
