@@ -68,18 +68,19 @@ def _recursive_walk(path, listing, tree, forbidden, exclusion):
         tree[path] = dir_content_key
 
     elif path.is_file() and path.suffix in ['.zip', '.tar', '.gztar', '.bztar', '.xztar']:
+        temp_dir_path = pathlib.Path(tempfile.mkdtemp())
         try:
-            temp_dir_path = pathlib.Path(tempfile.mkdtemp())
             shutil.unpack_archive(str(path), extract_dir=str(temp_dir_path))  # v3.7 accepts pathlib
             zip_listing, zip_tree, zip_forbidden = walk(temp_dir_path)
             append_listing(listing, zip_listing, path, temp_dir_path)
             append_tree(tree, zip_tree, path, temp_dir_path)
             append_forbidden(forbidden, zip_forbidden, path, temp_dir_path)
-            shutil.rmtree(temp_dir_path)
         except (shutil.ReadError, OSError, Exception) as e:
             print(f'!!!!!!!!!!!!!!!!!!!!!! Exception: {type(e)} on: {path}')
             forbidden.add(path)
             _hash_and_index_file(path, listing, tree)
+        finally:
+            shutil.rmtree(temp_dir_path)
 
     elif path.is_file():
         _hash_and_index_file(path, listing, tree)
