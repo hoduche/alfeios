@@ -8,11 +8,13 @@ def duplicate(path, dump_listing=False):
     List all duplicated files and directories in
     a root directory passed as the path argument.
     Save the duplicate listing as a duplicate_listing.json file in the root directory.
-    Print the potential space gain in Gigabytes.
+    Print the potential space gain.
+
     Can also dump the full listing.json and tree.json files in the root directory
     with the dump_listing argument.
     If a listing.json file is passed as the path argument instead of a root
-    directory, the listing is deserialized from the json file instead of being generated.
+    directory, the listing is deserialized from the json file instead of being generated,
+    which is significantly quicker but of course less up to date.
 
     :param path: path of the root directory to parse
                  or the listing.json file to deserialize
@@ -29,11 +31,11 @@ def duplicate(path, dump_listing=False):
         listing = fsw.load_json_listing(path)
         folder_path = path.parent
     elif path.is_dir():
-#        listing, tree, forbidden = fsw.walk(path)
         import collections
         listing = collections.defaultdict(set)
         tree = dict()
         forbidden = set()
+#        listing, tree, forbidden = fsw.walk(path)
         folder_path = path
         if dump_listing:
             fsw.dump_json_listing(listing, folder_path / 'listing.json')

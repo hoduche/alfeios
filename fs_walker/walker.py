@@ -41,6 +41,7 @@ def walk(path, exclusion=None):
     tree = dict()
     forbidden = set()
 
+#    path = path.resolve()
     _recursive_walk(path, listing, tree, forbidden, exclusion)
 
     return listing, tree, forbidden
@@ -135,7 +136,7 @@ def dump_json_listing(listing, file_path, start_path=None):
     serializable_listing = {str(tuple_key): [str(pathlib.PurePosixPath(path)) for path in path_set]
                             for tuple_key, path_set in listing.items()}
     json_listing = json.dumps(serializable_listing)
-    write_json(json_listing, file_path)
+    _write_text(json_listing, file_path)
 
 
 def load_json_listing(file_path, start_path=None):
@@ -179,7 +180,7 @@ def dump_json_tree(tree, file_path, start_path=None):
     serializable_tree = {str(pathlib.PurePosixPath(path_key)): tuple_value
                          for path_key, tuple_value in tree.items()}
     json_tree = json.dumps(serializable_tree)
-    write_json(json_tree, file_path)
+    _write_text(json_tree, file_path)
 
 
 def load_json_tree(file_path, start_path=None):
@@ -218,7 +219,7 @@ def dump_json_forbidden(forbidden, file_path, start_path=None):
         forbidden = {build_relative_path(path, start_path) for path in forbidden}
     serializable_forbidden = [str(pathlib.PurePosixPath(path)) for path in forbidden]
     json_forbidden = json.dumps(serializable_forbidden)
-    write_json(json_forbidden, file_path)
+    _write_text(json_forbidden, file_path)
 
 
 def unify(listings, trees, forbiddens):
@@ -246,11 +247,20 @@ def build_relative_path(absolute_path, start_path):
     return pathlib.Path(os.path.relpath(str(absolute_path), start=str(start_path)))  # v3.6 accepts pathlib
 
 
-def write_json(json_string, file_path):
+def _write_text(content_string, file_path):
     try:
-        file_path.write_text(json_string)
+        file_path.write_text(content_string)
+        print(f'{file_path.name} written on {file_path.parent}')
     except (PermissionError, Exception) as e:
         print(f'Not authorized to write {file_path.name} on {file_path.parent}')
+        temp_file_path = tempfile.mkstemp(prefix=file_path.stem + '_', suffix=file_path.suffix)[1]
+        temp_file_path = pathlib.Path(temp_file_path)
+        try:
+            temp_file_path.write_text(content_string)
+            print(f'{temp_file_path.name} written on {temp_file_path.parent}')
+        except (PermissionError, Exception) as e:
+            print(f'Not authorized to write {temp_file_path.name} on {temp_file_path.parent}')
+            print(f'{file_path.name} not written')
 
 
 def append_listing(listing, additional_listing, start_path, temp_path):

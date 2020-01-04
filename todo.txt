@@ -1,0 +1,3 @@
+ * delete open archives in temp once they are done
+ * resolve path to be absolute everywhere -> tests break
+ * 

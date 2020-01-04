@@ -30,9 +30,9 @@ pip install -e .
 ## Run
 
 #### For everybody (as a command)
-Upon installation, Fs-walker adds two commands to your
+Upon installation, Fs-walker adds three commands to your
 [command line interface shell](https://en.wikipedia.org/wiki/Command-line_interface):
-`duplicate` and `missing`.
+`missing`, `duplicate` and `walk`.
 
 This works on all Operating Systems thanks to the magic of
 [Python entry points](https://amir.rachum.com/blog/2017/07/28/python-entry-points)
