@@ -75,6 +75,7 @@ def _recursive_walk(path, listing, tree, forbidden, exclusion):
             append_listing(listing, zip_listing, path, temp_dir_path)
             append_tree(tree, zip_tree, path, temp_dir_path)
             append_forbidden(forbidden, zip_forbidden, path, temp_dir_path)
+            shutil.rmtree(temp_dir_path)
         except (shutil.ReadError, OSError, Exception) as e:
             print(f'!!!!!!!!!!!!!!!!!!!!!! Exception: {type(e)} on: {path}')
             forbidden.add(path)
