@@ -56,7 +56,7 @@ def test_walk(folder, name):
                               tests_data_path / 'expected_listing.json')
     assert listing == expected_listing
     assert tree == expected_tree
-    assert forbidden == set()
+    assert forbidden == {}
 
 
 def test_walk_with_exclusions():
@@ -91,7 +91,7 @@ def test_walk_with_exclusions():
     # verify
     assert listing == expected_listing
     assert tree == expected_tree
-    assert forbidden == set()
+    assert forbidden == {}
 
 
 def test_unify():

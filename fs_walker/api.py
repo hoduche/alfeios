@@ -31,11 +31,7 @@ def duplicate(path, dump_listing=False):
         listing = fsw.load_json_listing(path)
         folder_path = path.parent
     elif path.is_dir():
-        import collections
-        listing = collections.defaultdict(set)
-        tree = dict()
-        forbidden = set()
-#        listing, tree, forbidden = fsw.walk(path)
+        listing, tree, forbidden = fsw.walk(path)
         folder_path = path
         if dump_listing:
             fsw.dump_json_listing(listing, folder_path / 'listing.json')

@@ -37,9 +37,9 @@ def walk(path, exclusion=None):
     if not exclusion:
         exclusion = []
 
-    listing = collections.defaultdict(set)
-    tree = dict()
-    forbidden = set()
+    listing = collections.defaultdict(set)  # = {(hash, type, int): {pathlib.Path}}
+    tree = dict()  # = {pathlib.Path: (hash, type, int)}
+    forbidden = dict()  # = {pathlib.Path: type(Exception)}
 
 #    path = path.resolve()
     _recursive_walk(path, listing, tree, forbidden, exclusion)
@@ -59,8 +59,7 @@ def _recursive_walk(path, listing, tree, forbidden, exclusion):
                         dir_content_size += tree[each_child][2]
                         dir_content_hash_list.append(tree[each_child][0])
             except (PermissionError, Exception) as e:
-                print(f'!!!!!!!!!!!!!!!!!!!!!! Exception: {type(e)} on: {each_child}')
-                forbidden.add(each_child)
+                forbidden[each_child] = type(e)
         dir_content = '\n'.join(sorted(dir_content_hash_list))
         dir_content_hash = hashlib.md5(dir_content.encode()).hexdigest()
         dir_content_key = (dir_content_hash, DIR_TYPE, dir_content_size)
@@ -76,8 +75,7 @@ def _recursive_walk(path, listing, tree, forbidden, exclusion):
             append_tree(tree, zip_tree, path, temp_dir_path)
             append_forbidden(forbidden, zip_forbidden, path, temp_dir_path)
         except (shutil.ReadError, OSError, Exception) as e:
-            print(f'!!!!!!!!!!!!!!!!!!!!!! Exception: {type(e)} on: {path}')
-            forbidden.add(path)
+            forbidden[path] = type(e)
             _hash_and_index_file(path, listing, tree)
         finally:
             shutil.rmtree(temp_dir_path)
@@ -86,7 +84,7 @@ def _recursive_walk(path, listing, tree, forbidden, exclusion):
         _hash_and_index_file(path, listing, tree)
 
     else:
-        forbidden.add(path)
+        forbidden[path] = Exception
 
 
 def _hash_and_index_file(path, listing, tree):
@@ -208,7 +206,7 @@ def load_json_tree(file_path, start_path=None):
 def dump_json_forbidden(forbidden, file_path, start_path=None):
     """
     :param forbidden: forbidden to serialize in json
-    :rtype forbidden: set = {pathlib.Path}
+    :rtype forbidden: dict = {pathlib.Path: type(Exception)}
 
     :param file_path: path to create the json serialized forbidden
     :type file_path: pathlib.Path
@@ -218,8 +216,10 @@ def dump_json_forbidden(forbidden, file_path, start_path=None):
     """
 
     if start_path:
-        forbidden = {build_relative_path(path, start_path) for path in forbidden}
-    serializable_forbidden = [str(pathlib.PurePosixPath(path)) for path in forbidden]
+        forbidden = {build_relative_path(path_key, start_path): exception_value
+                     for path_key, exception_value in forbidden.items()}
+    serializable_forbidden = {str(pathlib.PurePosixPath(path_key)): str(exception_value)
+                              for path_key, exception_value in forbidden.items()}
     json_forbidden = json.dumps(serializable_forbidden)
     _write_text(json_forbidden, file_path)
 
@@ -230,15 +230,15 @@ def unify(listings, trees, forbiddens):
         for k, v in each_tree.items():
             if (not k in tree) or (tree[k][2] < v[2]):
                 tree[k] = v
-    listing = collections.defaultdict(set)  # = {(hash, type, int): {pathlib.Path}}
 
+    listing = collections.defaultdict(set)  # = {(hash, type, int): {pathlib.Path}}
     for each_listing in listings:
         for k, v in each_listing.items():
             for each_v in v:
                 if tree[each_v] == k:
                     listing[k].add(each_v)
-    forbidden = set()
 
+    forbidden = dict()  # = {pathlib.Path: Exception}
     for each_forbidden in forbiddens:
         forbidden.update(each_forbidden)
 
@@ -281,7 +281,7 @@ def append_tree(tree, additional_tree, start_path, temp_path):
 
 
 def append_forbidden(forbidden, additional_forbidden, start_path, temp_path):
-    for path in additional_forbidden:
-        relative_path = build_relative_path(path, temp_path)
-        absolute_path = start_path / relative_path
-        forbidden.add(absolute_path)
+    for path_key, exception_value in additional_forbidden:
+        relative_path_key = build_relative_path(path_key, temp_path)
+        absolute_path_key = start_path / relative_path_key
+        forbidden[absolute_path_key] = exception_value

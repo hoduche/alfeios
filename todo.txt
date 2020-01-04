@@ -1,2 +1,1 @@
  * resolve path to be absolute everywhere -> tests break
- * add exception in forbidden
