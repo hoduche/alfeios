@@ -5,6 +5,13 @@ Enrich your command-line shell [or file system / file manager] with Herculean cl
 
 Alfeios is a command line program ie a program that operates from the command line or from a shell
 
+
+
+
+
+
+
+
 to check duplicate or missing files
 
 You need space on your hard drive ?
@@ -58,5 +65,11 @@ And if a listing.json file is passed as the --old-path (or -o) argument or as th
 
 missing -o D:/Pictures -n E:/AllPictures -d
 
+----------------------------------------------------------------
+Improvements axis:
 
+- Viewer: For the moment Alfeios output are raw json files that are at the user disposal. A dedicated json viewer with graph display could be a better decision support tool.
 
+- File Manager: For the moment Alfeios only reads files. It could be enriched with other file manager CRUD functions, in particular duplicate removal possibilities.
+
+- File System: For the moment Alfeios is only a add-on to the command line shell. Its content-based index could be further rooted in the file system and refreshed incrementally after each file system operation, supporting the [copy-on-write principle](https://en.wikipedia.org/wiki/Copy-on-write#In_computer_storage).
