@@ -1,6 +1,6 @@
 import pathlib
 
-import fs_walker.walker as fsw
+import alfeios.walker as aw
 
 
 def duplicate(path, dump_listing=False):
@@ -28,24 +28,24 @@ def duplicate(path, dump_listing=False):
 
     path = pathlib.Path(path)
     if path.name == 'listing.json':
-        listing = fsw.load_json_listing(path)
+        listing = aw.load_json_listing(path)
         folder_path = path.parent
     elif path.is_dir():
-        listing, tree, forbidden = fsw.walk(path)
+        listing, tree, forbidden = aw.walk(path)
         folder_path = path
         if dump_listing:
-            fsw.dump_json_listing(listing, folder_path / 'listing.json')
-            fsw.dump_json_tree(tree, folder_path / 'tree.json')
-            fsw.dump_json_forbidden(forbidden, folder_path / 'forbidden.json')
+            aw.dump_json_listing(listing, folder_path / 'listing.json')
+            aw.dump_json_tree(tree, folder_path / 'tree.json')
+            aw.dump_json_forbidden(forbidden, folder_path / 'forbidden.json')
     else:
         print(f'This is not a valid path - exiting')
         return
 
-    duplicate_listing, size_gain = fsw.get_duplicate(listing)
+    duplicate_listing, size_gain = aw.get_duplicate(listing)
     if duplicate_listing:
         foreword = 'You can gain '
         afterword = 'bytes space by going through duplicate_listing.json'
-        fsw.dump_json_listing(duplicate_listing, folder_path / 'duplicate_listing.json')
+        aw.dump_json_listing(duplicate_listing, folder_path / 'duplicate_listing.json')
         if size_gain < 1E3:
             print(foreword + f'{size_gain} ' + afterword)
         elif size_gain < 1E6:
@@ -89,36 +89,36 @@ def missing(old_path, new_path, dump_listing=False):
 
     old_path = pathlib.Path(old_path)
     if old_path.name == 'listing.json':
-        old_listing = fsw.load_json_listing(old_path)
+        old_listing = aw.load_json_listing(old_path)
     elif old_path.is_dir():
-        old_listing, old_tree, old_forbidden = fsw.walk(old_path)
+        old_listing, old_tree, old_forbidden = aw.walk(old_path)
         old_folder_path = old_path
         if dump_listing:
-            fsw.dump_json_listing(old_listing, old_folder_path / 'listing.json')
-            fsw.dump_json_tree(old_tree, old_folder_path / 'tree.json')
-            fsw.dump_json_forbidden(old_forbidden, old_folder_path / 'forbidden.json')
+            aw.dump_json_listing(old_listing, old_folder_path / 'listing.json')
+            aw.dump_json_tree(old_tree, old_folder_path / 'tree.json')
+            aw.dump_json_forbidden(old_forbidden, old_folder_path / 'forbidden.json')
     else:
         print(f'Old is not a valid path - exiting')
         return
 
     new_path = pathlib.Path(new_path)
     if new_path.name == 'listing.json':
-        new_listing = fsw.load_json_listing(new_path)
+        new_listing = aw.load_json_listing(new_path)
         new_folder_path = new_path.parent
     elif new_path.is_dir():
-        new_listing, new_tree, new_forbidden = fsw.walk(new_path)
+        new_listing, new_tree, new_forbidden = aw.walk(new_path)
         new_folder_path = new_path
         if dump_listing:
-            fsw.dump_json_listing(new_listing, new_folder_path / 'listing.json')
-            fsw.dump_json_tree(new_tree, new_folder_path / 'tree.json')
-            fsw.dump_json_forbidden(new_forbidden, new_folder_path / 'forbidden.json')
+            aw.dump_json_listing(new_listing, new_folder_path / 'listing.json')
+            aw.dump_json_tree(new_tree, new_folder_path / 'tree.json')
+            aw.dump_json_forbidden(new_forbidden, new_folder_path / 'forbidden.json')
     else:
         print(f'New is not a valid path - exiting')
         return
 
-    missing_listing = fsw.get_missing(old_listing, new_listing)
+    missing_listing = aw.get_missing(old_listing, new_listing)
     if missing_listing:
-        fsw.dump_json_listing(missing_listing, new_folder_path / 'missing_listing.json')
+        aw.dump_json_listing(missing_listing, new_folder_path / 'missing_listing.json')
         print(f'There are {len(missing_listing)} Old files missing in New'
                ' - please go through missing_listing.json')
     else:

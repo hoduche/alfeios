@@ -15,14 +15,14 @@ Fs-walker can walk your two drives and list all files on the old one that are no
 
 #### For everybody (from PyPI)
 ```
-pip install fs-walker
+pip install alfeios
 ```
 
 #### For developers (from GitHub)
 ```
-git clone https://github.com/hoduche/fs-walker
+git clone https://github.com/hoduche/alfeios
 ```
-And from the newly created fs-walker directory, run:
+And from the newly created alfeios directory, run:
 ```
 pip install -e .
 ```

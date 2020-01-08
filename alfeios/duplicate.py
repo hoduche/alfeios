@@ -1,6 +1,6 @@
 import argparse
 
-import fs_walker.api as fs
+import alfeios.api as aa
 
 
 def duplicate(args=None):
@@ -28,7 +28,7 @@ directory, the listing is deserialized from the json file instead of being gener
                             help='dump complete listing and tree (deactivated by default)')
     args = arg_parser.parse_args(args=args)
 
-    fs.duplicate(args.path, args.dump_listing)
+    aa.duplicate(args.path, args.dump_listing)
 
 
 # to debug real use cases, set in your Debug Configuration something like:

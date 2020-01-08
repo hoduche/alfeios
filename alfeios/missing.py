@@ -1,6 +1,6 @@
 import argparse
 
-import fs_walker.api as fs
+import alfeios.api as aa
 
 
 def missing(args=None):
@@ -31,7 +31,7 @@ the corresponding listing is deserialized from the json file instead of being ge
                             help='dump complete listing and tree (deactivated by default)')
     args = arg_parser.parse_args(args=args)
 
-    fs.missing(args.old_path, args.new_path, args.dump_listing)
+    aa.missing(args.old_path, args.new_path, args.dump_listing)
 
 
 # to debug real use cases, set in your Debug Configuration something like:

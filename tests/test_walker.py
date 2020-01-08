@@ -2,7 +2,7 @@ import pathlib
 
 import pytest
 
-import fs_walker.walker as fsw
+import alfeios.walker as fsw
 
 debug = False
 

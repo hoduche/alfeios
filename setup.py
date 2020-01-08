@@ -16,7 +16,7 @@ def find_requirements():
 
 
 def find_version():
-    with open('fs_walker/__init__.py', encoding='utf-8') as version_file:
+    with open('alfeios/__init__.py', encoding='utf-8') as version_file:
         pattern = '^__version__ = [\'\"]([^\'\"]*)[\'\"]'
         match = re.search(pattern, version_file.readline().strip())
         if match:
@@ -24,23 +24,23 @@ def find_version():
 
 
 setup(
-    name='fs-walker',
+    name='alfeios',
     version=find_version(),
     description='Walk your file system to check duplicate or missing files',
     long_description=find_readme(),
     long_description_content_type='text/markdown',
-    url='https://github.com/hoduche/fs-walker',
-    download_url='https://github.com/hoduche/fs-walker/archive/v0.0.1.tar.gz',
+    url='https://github.com/hoduche/alfeios',
+    download_url='https://github.com/hoduche/alfeios/archive/v0.0.1.tar.gz',
     author='Henri-Olivier Duché',
     author_email='hoduche@yahoo.fr',
     license='MIT',
-    keywords='fs filesystem file system walk crawl files duplicate missing',
+    keywords='fs filesystem file system walk crawl files duplicate missing content hash hashcode checksum zip',
     packages=find_packages(),
     include_package_data=True,
     install_requires=find_requirements(),
     python_requires='>=3.6',
-    entry_points={'console_scripts': ['duplicate = fs_walker.duplicate:duplicate',
-                                      'missing = fs_walker.missing:missing']},
+    entry_points={'console_scripts': ['duplicate = alfeios.duplicate:duplicate',
+                                      'missing = alfeios.missing:missing']},
     classifiers=[
         "Programming Language :: Python :: 3",
         "License :: OSI Approved :: MIT License",
