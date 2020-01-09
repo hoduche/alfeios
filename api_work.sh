@@ -5,31 +5,31 @@ Enrich your command-line shell [or file system / file manager] with Herculean cl
 
 Alfeios is a command line program ie a program that operates from the command line or from a shell
 
-
 Have you ever felt overhelmed with all your hard drive backups that have diverged significantly
 files have been renamed, folders have been moved and it is humanly impossible to rationalize
 So you keep all your backups, just in case,
+You want to give a new life to your old hard drive but you are not sure all its content has been saved on your new hard drive ?
+Fs-walker can walk your two drives and list all files on the old one that are not present on the new one.
 
 Alfeios can ...
 
-
 Alfeios recursively indexes the content of a directory.
 It goes inside zip, tar, gztar, bztar and xztar compressed files
-
-
-
+Its index is content-based meaning that two files with different names and different dates will be identified as duplicate if they have the same content.
 
 to check duplicate or missing files
 
 You need space on your hard drive ?
 Fs-walker can walk your file system and list all duplicated files you can safely remove as well as the space you can gain.
 
-You want to give a new life to your old hard drive but you are not sure all its content has been saved on your new hard drive ?
-Fs-walker can walk your two drives and list all files on the old one that are not present on the new one. 
-
 Upon installation, Fs-walker adds three commands to your command line (interface) shell `missing`, `duplicate` and `walk`
 
 This works on all Operating Systems thanks to the magic of Python entry points
+
+
+help screen
+tab completion
+--version
 
 
 ----------------------------------------------------------------

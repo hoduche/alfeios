@@ -1,6 +1,6 @@
-# Fs-walker
+# Alfeios
 
-### Walk your file system to check duplicate or missing files
+### Enrich your command-line shell with Herculean cleaning capabilities
 ___
 
 >You need space on your hard drive ?
