@@ -2,17 +2,21 @@
 
 import argparse
 
+import alfeios.api
+
 
 def index(args):
     print('index function: ' + args.path)
+    print()
+    print(alfeios.api.index.__doc__)
 
 
 def duplicate(args):
-    print('duplicate function: ' + args.path)
+    alfeios.api.duplicate(args.path, args.save_listing)
 
 
 def missing(args):
-    print('missing function: ' + args.old_path + ' -> ' + args.new_path)
+    alfeios.api.missing(args.old_path, args.new_path, args.save_listing)
 
 
 def main():
@@ -36,7 +40,8 @@ def main():
         name='index',
         aliases=['idx', 'i'],
         help=index_help,  # for alfeios help
-        description=index_help + ''':
+        description=index_help + ':' + # alfeios.api.index.__doc__ +
+'''
   - Index all file and directory contents in a root directory
     including the inside of zip, tar, gztar, bztar and xztar compressed files
   - Contents are identified by their hash-code, type (file or directory) and size
@@ -56,7 +61,7 @@ def main():
     parser_i.add_argument(
         'path',
         nargs='?', default='.',
-        help='path to the root directory - default is here'
+        help='path to the root directory - default is current working directory'
     )
     parser_i.set_defaults(function_to_call=index)
 
@@ -86,7 +91,7 @@ def main():
     parser_d.add_argument(
         'path',
         nargs='?', default='.',
-        help='path to the root directory (or listing.json) - default is here'
+        help='path to the root directory (or listing.json) - default is current working directory'
     )
     parser_d.add_argument(
         '-s', '--save-listing', action='store_true',

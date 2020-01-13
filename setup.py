@@ -39,8 +39,7 @@ setup(
     include_package_data=True,
     install_requires=find_requirements(),
     python_requires='>=3.6',
-    entry_points={'console_scripts': ['duplicate = alfeios.duplicate:duplicate',
-                                      'missing = alfeios.missing:missing']},
+    entry_points={'console_scripts': ['alfeios = alfeios.cli:main']},
     classifiers=[
         "Programming Language :: Python :: 3",
         "License :: OSI Approved :: MIT License",
