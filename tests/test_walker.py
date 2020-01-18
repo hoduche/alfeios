@@ -2,7 +2,7 @@ import pathlib
 
 import pytest
 
-import alfeios.json as aj
+import alfeios.io as aj
 import alfeios.walker as aw
 
 debug = False

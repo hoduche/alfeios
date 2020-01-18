@@ -24,7 +24,7 @@ def save_json_listing(listing, file_path, start_path=None):
                    for tuple_key, path_set in listing.items()}
     serializable_listing = {str(tuple_key): [str(pathlib.PurePosixPath(path)) for path in path_set]
                             for tuple_key, path_set in listing.items()}
-    json_listing = json.saves(serializable_listing)
+    json_listing = json.dumps(serializable_listing)
     _write_text(json_listing, file_path)
 
 
@@ -68,7 +68,7 @@ def save_json_tree(tree, file_path, start_path=None):
                 for path_key, tuple_value in tree.items()}
     serializable_tree = {str(pathlib.PurePosixPath(path_key)): tuple_value
                          for path_key, tuple_value in tree.items()}
-    json_tree = json.saves(serializable_tree)
+    json_tree = json.dumps(serializable_tree)
     _write_text(json_tree, file_path)
 
 
@@ -109,7 +109,7 @@ def save_json_forbidden(forbidden, file_path, start_path=None):
                      for path_key, exception_value in forbidden.items()}
     serializable_forbidden = {str(pathlib.PurePosixPath(path_key)): str(exception_value)
                               for path_key, exception_value in forbidden.items()}
-    json_forbidden = json.saves(serializable_forbidden)
+    json_forbidden = json.dumps(serializable_forbidden)
     _write_text(json_forbidden, file_path)
 
 

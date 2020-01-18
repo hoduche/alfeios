@@ -1,4 +1,15 @@
 ----------------------------------------------------------------
+commands to be tested automatically
+----------------------------------------------------------------
+alfeios -h
+alfeios index -h
+alfeios index
+alfeios duplicate
+alfeios missing -> error
+alfeios missing tests/data/Folder8 tests/data/Folder0
+...
+
+----------------------------------------------------------------
 -- Alfeios
 ----------------------------------------------------------------
 Enrich your command-line shell [or file system / file manager] with Herculean cleaning capabilities.

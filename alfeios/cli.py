@@ -6,9 +6,7 @@ import alfeios.api
 
 
 def index(args):
-    print('index function: ' + args.path)
-    print()
-    print(alfeios.api.index.__doc__)
+    alfeios.api.index(args.path)
 
 
 def duplicate(args):
