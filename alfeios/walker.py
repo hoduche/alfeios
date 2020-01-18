@@ -21,7 +21,7 @@ def walk(path, exclusion=None):
     tree    : a dictionary whose keys are pathlib.Path and values are tuples (hash, type, size)
     in both data structures, the type distinguishes files from directories
 
-    :param path: path of the root directory to parse
+    :param path: path to the root directory to parse
     :type path: pathlib.Path
 
     :param exclusion: list of directories and files not to parse

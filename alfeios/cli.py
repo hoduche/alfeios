@@ -1,30 +1,18 @@
 #!/usr/bin/env python
 
-import argparse
+import dsargparse
 
 import alfeios.api
 
 
-def index(args):
-    alfeios.api.index(args.path)
-
-
-def duplicate(args):
-    alfeios.api.duplicate(args.path, args.save_listing)
-
-
-def missing(args):
-    alfeios.api.missing(args.old_path, args.new_path, args.save_listing)
-
-
 def main():
     # create the top-level alfeios parser
-    parser = argparse.ArgumentParser(
+    parser = dsargparse.ArgumentParser(
         description='Enrich your command-line shell with Herculean cleaning capabilities',
         usage='alfeios [-h] <command> [<args>]',
         epilog='''
         ''',
-        formatter_class=argparse.RawTextHelpFormatter
+        formatter_class=dsargparse.RawTextHelpFormatter
     )
     subparsers_factory = parser.add_subparsers(
         title='Alfeios commands',
@@ -35,56 +23,34 @@ def main():
     # create the parser for the index command
     index_help = 'Index content of a root directory'
     parser_i = subparsers_factory.add_parser(
-        name='index',
+        func=alfeios.api.index,
         aliases=['idx', 'i'],
         help=index_help,  # for alfeios help
-        description=index_help + ':' + # alfeios.api.index.__doc__ +
-'''
-  - Index all file and directory contents in a root directory
-    including the inside of zip, tar, gztar, bztar and xztar compressed files
-  - Contents are identified by their hash-code, type (file or directory) and size
-  - It saves in the root directory:
-     - A listing.json file that is a dictionary: content -> list of paths
-     - A tree.json.file that is a dictionary: path -> content
-     - A forbidden.json file that lists paths with no access
-  - In case there is no write access to the root directory,
-    the output files are saved in a temp folder of the filesystem with a unique identifier
-''',
         epilog='''example:
   alfeios index
   alfeios index D:/Pictures
 ''',
-        formatter_class=argparse.RawTextHelpFormatter
+        formatter_class=dsargparse.RawTextHelpFormatter
     )
     parser_i.add_argument(
         'path',
         nargs='?', default='.',
         help='path to the root directory - default is current working directory'
     )
-    parser_i.set_defaults(function_to_call=index)
 
     # create the parser for the duplicate command
     duplicate_help = 'Find duplicate content in a root directory'
     parser_d = subparsers_factory.add_parser(
-        name='duplicate',
+        func=alfeios.api.duplicate,
         aliases=['dup', 'd'],
         help=duplicate_help,  # for alfeios help
-        description=duplicate_help + ''':
-  - List all duplicated files and directories in a root directory
-  - Save the duplicate listing as a duplicate_listing.json file in the root directory
-  - Print the potential space gain
-  - Can also dump the full listing.json and tree.json files in the root directory
-    with the --save-listing (or -s) argument
-  - If a listing.json file is passed as positional argument instead of a root directory,
-    the listing is deserialized from the json file instead of being generated
-''',
         epilog='''example:
   alfeios duplicate
   alfeios duplicate D:/Pictures
   alfeios duplicate D:/Pictures -s
   alfeios duplicate D:/Pictures/listing.json
 ''',
-        formatter_class=argparse.RawTextHelpFormatter
+        formatter_class=dsargparse.RawTextHelpFormatter
     )
     parser_d.add_argument(
         'path',
@@ -95,29 +61,19 @@ def main():
         '-s', '--save-listing', action='store_true',
         help='save complete listing and tree (deactivated by default)'
     )
-    parser_d.set_defaults(function_to_call=duplicate)
 
     # create the parser for the missing command
     missing_help = 'Find missing content in a new root directory from an old root directory'
     parser_m = subparsers_factory.add_parser(
-        name='missing',
+        func=alfeios.api.missing,
         aliases=['mis', 'm'],
         help=missing_help,  # for alfeios help
-        description=missing_help + ''':
-  - List all files and directories that are present in an old root directory
-    and that are missing in a new one
-  - Save the missing listing as a missing_listing.json file in the new root directory
-  - Can also save the full listing.json and tree.json files in the two root directories
-    with the --save-listing (or -s) optional argument
-  - If a listing.json file is passed as one positional argument instead of a root directory,
-    the corresponding listing is deserialized from the json file instead of being generated
-''',
         epilog='''examples:
   alfeios missing D:/Pictures E:/AllPictures
   alfeios missing D:/Pictures E:/AllPictures -s
   alfeios missing D:/Pictures/listing.json E:/AllPictures/listing.json
 ''',
-        formatter_class=argparse.RawTextHelpFormatter
+        formatter_class=dsargparse.RawTextHelpFormatter
     )
     parser_m.add_argument(
         'old_path',
@@ -131,11 +87,9 @@ def main():
         '-s', '--save-listing', action='store_true',
         help='save complete listing and tree (deactivated by default)'
     )
-    parser_m.set_defaults(function_to_call=missing)
 
     # parse command line and call appropriate function
-    args = parser.parse_args()
-    args.function_to_call(args)
+    return parser.parse_and_run()
 
 
 # to debug real use cases, set in your Debug Configuration something like:

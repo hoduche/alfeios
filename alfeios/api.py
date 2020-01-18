@@ -6,18 +6,19 @@ import alfeios.walker as aw
 
 def index(path):
     """
+
     - Index all file and directory contents in a root directory
       including the inside of zip, tar, gztar, bztar and xztar compressed files
     - Contents are identified by their hash-code, type (file or directory) and size
-    - It saves in the root directory:
+    - It saves three files in the root directory:
        - A listing.json file that is a dictionary: content -> list of paths
        - A tree.json.file that is a dictionary: path -> content
        - A forbidden.json file that lists paths with no access
     - In case there is no write access to the root directory,
       the output files are saved in a temp folder of the filesystem with a unique identifier
 
-    :param path: path of the root directory
-    :type path: str or pathlib.Path
+    Args:
+        path (str or pathlib.Path): path to the root directory
     """
 
     path = pathlib.Path(path)
@@ -33,25 +34,23 @@ def index(path):
 
 def duplicate(path, save_listing=False):
     """
-    List all duplicated files and directories in
-    a root directory passed as the path argument.
-    Save the duplicate listing as a duplicate_listing.json file in the root directory.
-    Print the potential space gain.
 
-    Can also save the full listing.json and tree.json files in the root directory
-    with the save_listing argument.
-    If a listing.json file is passed as the path argument instead of a root
-    directory, the listing is deserialized from the json file instead of being generated,
-    which is significantly quicker but of course less up to date.
+    - List all duplicated files and directories in a root directory
+    - Save the duplicate listing as a duplicate_listing.json file in the root directory
+    - Print the potential space gain
+    - If a listing.json file is passed as positional argument instead of a root directory,
+      the listing is deserialized from the json file instead of being generated
+      which is significantly quicker but of course less up to date
+    - Can also save the listing.json, tree.json and forbidden.json files in the root directory
+    - In case there is no write access to the root directory,
+      the output files are saved in a temp folder of the filesystem with a unique identifier
 
-    :param path: path of the root directory to parse
-                 or the listing.json file to deserialize
-    :type path: str or pathlib.Path
-
-    :param save_listing: flag to save the full listing.json and tree.json files
-                         in the root directory
-                         default is False
-    :type save_listing: bool
+    Args:
+        path (str or pathlib.Path): path to the root directory to parse
+                                    or the listing.json file to deserialize
+        save_listing (bool): flag to save the listing.json, tree.json and forbidden.json files
+                             in the root directory
+                             default is False
     """
 
     path = pathlib.Path(path)
@@ -90,29 +89,25 @@ def duplicate(path, save_listing=False):
 
 def missing(old_path, new_path, save_listing=False):
     """
-    List all files and directories that
-    are present in an old root directory passed as the old_path argument
-    and that are missing in a new one passed as the new_path argument.
-    Save the missing listing as a missing_listing.json file in the new root directory.
-    Can also save the full listing.json and tree.json files in the two root directories
-    with the save_listing argument.
-    If a listing.json file is passed as the old-path argument
-    or as the new-path argument instead of a root directory,
-    the corresponding listing is deserialized from the json file instead of being generated.
 
+    - List all files and directories that are present in an old root directory
+      and that are missing in a new one
+    - Save the missing listing as a missing_listing.json file in the new root directory
+    - If a listing.json file is passed as a positional argument instead of a root directory,
+      the corresponding listing is deserialized from the json file instead of being generated
+      which is significantly quicker but of course less up to date
+    - Can also save the listing.json, tree.json and forbidden.json files in the two root directories
+    - In case there is no write access to the new root directory,
+      the output files are saved in a temp folder of the filesystem with a unique identifier
 
-    :param old_path: path of the old root directory to parse
-                     or the listing.json file to deserialize
-    :type old_path: str or pathlib.Path
-
-    :param new_path: path of the new root directory to parse
-                     or the listing.json file to deserialize
-    :type new_path: str or pathlib.Path
-
-    :param save_listing: flag to save the full listing.json and tree.json files
-                         in the two root directories
-                         default is False
-    :type save_listing: bool
+    Args:
+        old_path (str or pathlib.Path): path to the old root directory to parse
+                                    or the listing.json file to deserialize
+        new_path (str or pathlib.Path): path to the new root directory to parse
+                                    or the listing.json file to deserialize
+        save_listing (bool): flag to save the listing.json, tree.json and forbidden.json files
+                             in the two root directories
+                             default is False
     """
 
     old_path = pathlib.Path(old_path)
