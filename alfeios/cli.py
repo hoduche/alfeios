@@ -23,11 +23,10 @@ def main():
     )
 
     # create the parser for the index command
-    index_help = 'Index content of a root directory'
     parser_i = subparsers_factory.add_parser(
         func=alfeios.api.index,
         aliases=['idx', 'i'],
-        help=index_help,  # for alfeios help
+        help='Index content of a root directory',
         epilog='''example:
   alfeios index
   alfeios index D:/Pictures
@@ -42,15 +41,13 @@ def main():
     )
 
     # create the parser for the duplicate command
-    duplicate_help = 'Find duplicate content in a root directory'
     parser_d = subparsers_factory.add_parser(
         func=alfeios.api.duplicate,
         aliases=['dup', 'd'],
-        help=duplicate_help,  # for alfeios help
+        help='Find duplicate content in a root directory',
         epilog='''example:
   alfeios duplicate
-  alfeios duplicate D:/Pictures
-  alfeios duplicate D:/Pictures -s
+  alfeios duplicate -s D:/Pictures
   alfeios duplicate D:/Pictures/listing.json
 ''',
         formatter_class=dsargparse.RawTextHelpFormatter
@@ -62,20 +59,20 @@ def main():
              'default is current working directory'
     )
     parser_d.add_argument(
-        '-s', '--save-listing', action='store_true',
-        help='save complete listing and tree (deactivated by default)'
+        '-s', '--save-index', action='store_true',
+        help='save the listing.json, tree.json and forbidden.json files in the'
+             ' root directory'
     )
 
     # create the parser for the missing command
-    missing_help = 'Find missing content in a new root directory' \
-                   ' from an old root directory'
     parser_m = subparsers_factory.add_parser(
         func=alfeios.api.missing,
         aliases=['mis', 'm'],
-        help=missing_help,  # for alfeios help
+        help='Find missing content in a new root directory from an old root'
+             ' directory',
         epilog='''examples:
   alfeios missing D:/Pictures E:/AllPictures
-  alfeios missing D:/Pictures E:/AllPictures -s
+  alfeios missing -s D:/Pictures E:/AllPictures
   alfeios missing D:/Pictures/listing.json E:/AllPictures/listing.json
 ''',
         formatter_class=dsargparse.RawTextHelpFormatter
@@ -89,8 +86,9 @@ def main():
         help='path to the new root directory (or new listing.json)'
     )
     parser_m.add_argument(
-        '-s', '--save-listing', action='store_true',
-        help='save complete listing and tree (deactivated by default)'
+        '-s', '--save-index', action='store_true',
+        help='save the listing.json, tree.json and forbidden.json files in the'
+             ' 2 root directories'
     )
 
     # parse command line and call appropriate function

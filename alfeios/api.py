@@ -14,6 +14,7 @@ def index(path):
     - It saves three files in the root directory:
        - A listing.json file that is a dictionary: content -> list of paths
        - A tree.json.file that is a dictionary: path -> content
+         (the listing.json dual)
        - A forbidden.json file that lists paths with no access
     - In case of no write access to the root directory, the output files are
       saved in a temp folder of the filesystem with a unique identifier
@@ -33,7 +34,7 @@ def index(path):
         return
 
 
-def duplicate(path, save_listing=False):
+def duplicate(path, save_index=False):
     """
 
     - List all duplicated files and directories in a root directory
@@ -51,19 +52,19 @@ def duplicate(path, save_listing=False):
     Args:
         path (str or pathlib.Path): path to the root directory to parse or the
                                     listing.json file to deserialize
-        save_listing (bool): flag to save the listing.json, tree.json and
-                             forbidden.json files in the root directory
-                             default is False
+        save_index (bool): flag to save the listing.json, tree.json and
+                           forbidden.json files in the root directory
+                           default is False
     """
 
     path = pathlib.Path(path)
-    if path.name == 'listing.json':
+    if path.is_file() and path.name == 'listing.json':
         listing = ai.load_json_listing(path)
         folder_path = path.parent
     elif path.is_dir():
         listing, tree, forbidden = aw.walk(path)
         folder_path = path
-        if save_listing:
+        if save_index:
             ai.save_json_listing(listing, folder_path / 'listing.json')
             ai.save_json_tree(tree, folder_path / 'tree.json')
             ai.save_json_forbidden(forbidden, folder_path / 'forbidden.json')
@@ -91,7 +92,7 @@ def duplicate(path, save_listing=False):
         print(f'Congratulations there is no duplicate here')
 
 
-def missing(old_path, new_path, save_listing=False):
+def missing(old_path, new_path, save_index=False):
     """
 
     - List all files and directories that are present in an old root directory
@@ -112,18 +113,18 @@ def missing(old_path, new_path, save_listing=False):
                                         or the listing.json file to deserialize
         new_path (str or pathlib.Path): path to the new root directory to parse
                                         or the listing.json file to deserialize
-        save_listing (bool): flag to save the listing.json, tree.json
-                             and forbidden.json files in the 2 root directories
-                             default is False
+        save_index (bool): flag to save the listing.json, tree.json
+                           and forbidden.json files in the 2 root directories
+                           default is False
     """
 
     old_path = pathlib.Path(old_path)
-    if old_path.name == 'listing.json':
+    if old_path.is_file() and old_path.name == 'listing.json':
         old_listing = ai.load_json_listing(old_path)
     elif old_path.is_dir():
         old_listing, old_tree, old_forbidden = aw.walk(old_path)
         old_folder_path = old_path
-        if save_listing:
+        if save_index:
             ai.save_json_listing(old_listing, old_folder_path / 'listing.json')
             ai.save_json_tree(old_tree, old_folder_path / 'tree.json')
             ai.save_json_forbidden(old_forbidden,
@@ -133,13 +134,13 @@ def missing(old_path, new_path, save_listing=False):
         return
 
     new_path = pathlib.Path(new_path)
-    if new_path.name == 'listing.json':
+    if new_path.is_file() and new_path.name == 'listing.json':
         new_listing = ai.load_json_listing(new_path)
         new_folder_path = new_path.parent
     elif new_path.is_dir():
         new_listing, new_tree, new_forbidden = aw.walk(new_path)
         new_folder_path = new_path
-        if save_listing:
+        if save_index:
             ai.save_json_listing(new_listing, new_folder_path / 'listing.json')
             ai.save_json_tree(new_tree, new_folder_path / 'tree.json')
             ai.save_json_forbidden(new_forbidden,

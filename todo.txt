@@ -1,4 +1,23 @@
- * resolve path to be absolute everywhere -> tests break
- * use tqdm to display a progress bar
+ * check what dsargparse can simplify in cli.py
  * delete full_log.txt and errors.txt
- * merge api_work.sh and readme
+ * help screen
+   tab completion
+   --version
+
+ * do the whole HO use case with several old and several new root directories
+ * use tqdm to display a progress bar
+   by default display a progress bar + write info, -q --quiet displays nothing
+ * resolve path to be absolute everywhere -> tests break
+
+ * unit tests on api and cli
+
+----------------------------------------------------------------
+commands to be tested automatically
+----------------------------------------------------------------
+alfeios -h
+alfeios index -h
+alfeios index
+alfeios duplicate
+alfeios missing -> error
+alfeios missing tests/data/Folder8 tests/data/Folder0
+...
