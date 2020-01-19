@@ -8,7 +8,8 @@ import alfeios.api
 def main():
     # create the top-level alfeios parser
     parser = dsargparse.ArgumentParser(
-        description='Enrich your command-line shell with Herculean cleaning capabilities',
+        description='Enrich your command-line shell with Herculean cleaning'
+                    ' capabilities',
         usage='alfeios [-h] <command> [<args>]',
         epilog='''
         ''',
@@ -16,7 +17,8 @@ def main():
     )
     subparsers_factory = parser.add_subparsers(
         title='Alfeios commands',
-        prog='alfeios',  # mandatory as usage has been overwritten in alfeios parser
+        prog='alfeios',  # mandatory as usage has been overwritten
+                         # in alfeios parser
         metavar=' ' * 21  # hack to display help on one-liners
     )
 
@@ -35,7 +37,8 @@ def main():
     parser_i.add_argument(
         'path',
         nargs='?', default='.',
-        help='path to the root directory - default is current working directory'
+        help='path to the root directory'
+             ' - default is current working directory'
     )
 
     # create the parser for the duplicate command
@@ -55,7 +58,8 @@ def main():
     parser_d.add_argument(
         'path',
         nargs='?', default='.',
-        help='path to the root directory (or listing.json) - default is current working directory'
+        help='path to the root directory (or listing.json) - '
+             'default is current working directory'
     )
     parser_d.add_argument(
         '-s', '--save-listing', action='store_true',
@@ -63,7 +67,8 @@ def main():
     )
 
     # create the parser for the missing command
-    missing_help = 'Find missing content in a new root directory from an old root directory'
+    missing_help = 'Find missing content in a new root directory' \
+                   ' from an old root directory'
     parser_m = subparsers_factory.add_parser(
         func=alfeios.api.missing,
         aliases=['mis', 'm'],

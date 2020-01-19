@@ -13,33 +13,35 @@ DIR_TYPE = 'DIR'
 
 
 def walk(path, exclusion=None):
-    """
-    Recursively walks through a root directory to index its content.
-    It manages two data structures:
-    listing : a collections.defaultdict(set) whose keys are tuples (hash, type, size)
-              and values are list of pathlib.Path
-    tree    : a dictionary whose keys are pathlib.Path and values are tuples (hash, type, size)
-    in both data structures, the type distinguishes files from directories
+    """ Recursively walks through a root directory to index its content
 
-    :param path: path to the root directory to parse
-    :type path: pathlib.Path
+    It manages three data structures:
+    - listing   : the most important one: a collections.defaultdict(set) whose
+                  keys are 3-tuples (hash, type, size) and values are list of
+                  pathlib.Path
+    - tree      : the listing dual: a dictionary whose keys are pathlib.Path
+                  and values are 3-tuples (hash, type, size)
+    - forbidden : the no-access list: a dictionary whose keys are pathlib.Path
+                  and values are Exceptions
+    in listing and tree, the type distinguishes files from directories
 
-    :param exclusion: list of directories and files not to parse
-    :type exclusion: list of str
+    Args:
+        path (pathlib.Path): path to the root directory to parse
+        exclusion (list of str): list of directories and files not to parse
 
-    :return: root directory listing
-    :rtype: collections.defaultdict(set) = {(hash, type, int): {pathlib.Path}}
-
-    :return: root directory tree
-    :rtype: dict = {pathlib.Path: (hash, type, int)}
+    Returns:
+        listing   : collections.defaultdict(set) =
+                    {(hash, type, int): {pathlib.Path}}
+        tree      : dict = {pathlib.Path: (hash, type, int)}
+        forbidden : dict = {pathlib.Path: Exception}
     """
 
     if not exclusion:
         exclusion = []
 
-    listing = collections.defaultdict(set)  # = {(hash, type, int): {pathlib.Path}}
-    tree = dict()  # = {pathlib.Path: (hash, type, int)}
-    forbidden = dict()  # = {pathlib.Path: type(Exception)}
+    listing = collections.defaultdict(set)
+    tree = dict()
+    forbidden = dict()
 
 #    path = path.resolve()
     _recursive_walk(path, listing, tree, forbidden, exclusion)
@@ -53,8 +55,10 @@ def _recursive_walk(path, listing, tree, forbidden, exclusion):
         dir_content_hash_list = []
         for each_child in path.iterdir():
             try:
-                if each_child.name not in exclusion and not each_child.is_symlink():
-                    _recursive_walk(each_child, listing, tree, forbidden, exclusion)
+                if each_child.name not in exclusion and\
+                        not each_child.is_symlink():
+                    _recursive_walk(each_child, listing, tree, forbidden,
+                                    exclusion)
                     if each_child not in forbidden:
                         dir_content_size += tree[each_child][2]
                         dir_content_hash_list.append(tree[each_child][0])
@@ -66,10 +70,12 @@ def _recursive_walk(path, listing, tree, forbidden, exclusion):
         listing[dir_content_key].add(path)
         tree[path] = dir_content_key
 
-    elif path.is_file() and path.suffix in ['.zip', '.tar', '.gztar', '.bztar', '.xztar']:
+    elif path.is_file() and path.suffix in ['.zip', '.tar', '.gztar', '.bztar',
+                                            '.xztar']:
         temp_dir_path = pathlib.Path(tempfile.mkdtemp())
         try:
-            shutil.unpack_archive(str(path), extract_dir=str(temp_dir_path))  # v3.7 accepts pathlib
+            # v3.7 accepts pathlib as extract_dir=
+            shutil.unpack_archive(str(path), extract_dir=str(temp_dir_path))
             zip_listing, zip_tree, zip_forbidden = walk(temp_dir_path)
             _append_listing(listing, zip_listing, path, temp_dir_path)
             _append_tree(tree, zip_tree, path, temp_dir_path)
@@ -104,16 +110,17 @@ def _hash_and_index_file(path, listing, tree):
 def get_duplicate(listing):
     duplicate = {k: v for k, v in listing.items() if len(v) >= 2}
     size_gain = sum([k[2] * (len(v) - 1) for k, v in duplicate.items()])
-    duplicate_sorted_by_size = {k: v for (k, v) in sorted(duplicate.items(),
-                                                           key=lambda i: i[0][2],
-                                                           reverse=True)}
+    duplicate_sorted_by_size = {k: v for (k, v)
+                                in sorted(duplicate.items(),
+                                          key=lambda i: i[0][2],
+                                          reverse=True)}
     result = collections.defaultdict(set, duplicate_sorted_by_size)
     return result, size_gain
 
 
 def get_missing(old_listing, new_listing):
-    non_included = {k: v for k, v in old_listing.items() if (k not in new_listing
-                                                             and k[1] == FILE_TYPE)}
+    non_included = {k: v for k, v in old_listing.items()
+                    if (k not in new_listing and k[1] == FILE_TYPE)}
     result = collections.defaultdict(set, non_included)
     return result
 
@@ -122,10 +129,11 @@ def unify(listings, trees, forbiddens):
     tree = dict()  # = {pathlib.Path: (hash, type, int)}
     for each_tree in trees:
         for k, v in each_tree.items():
-            if (not k in tree) or (tree[k][2] < v[2]):
+            if (k not in tree) or (tree[k][2] < v[2]):
                 tree[k] = v
 
-    listing = collections.defaultdict(set)  # = {(hash, type, int): {pathlib.Path}}
+    listing = collections.defaultdict(set)
+    # = {(hash, type, int): {pathlib.Path}}
     for each_listing in listings:
         for k, v in each_listing.items():
             for each_v in v:

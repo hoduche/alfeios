@@ -47,14 +47,12 @@ def test_walk(folder, name):
 
     # verify
     if debug:
-        aj.save_json_tree(tree,
-                           tests_data_path / 'tree.json')
+        aj.save_json_tree(tree, tests_data_path / 'tree.json')
         aj.save_json_tree(expected_tree,
-                           tests_data_path / 'expected_tree.json')
-        aj.save_json_listing(listing,
-                              tests_data_path / 'listing.json')
+                          tests_data_path / 'expected_tree.json')
+        aj.save_json_listing(listing, tests_data_path / 'listing.json')
         aj.save_json_listing(expected_listing,
-                              tests_data_path / 'expected_listing.json')
+                             tests_data_path / 'expected_listing.json')
     assert listing == expected_listing
     assert tree == expected_tree
     assert forbidden == {}
@@ -63,8 +61,10 @@ def test_walk(folder, name):
 def test_walk_with_exclusions():
     # run
     listing, tree, forbidden = aw.walk(tests_data_path / 'Folder0',
-                                        exclusion=['Folder3', 'Folder4_1',
-                                                   'file3.txt', 'groundhog.png'])
+                                       exclusion=['Folder3',
+                                                  'Folder4_1',
+                                                  'file3.txt',
+                                                  'groundhog.png'])
 
     # for logging purpose only
     if debug:
@@ -99,11 +99,13 @@ def test_unify():
     # run
     listing0_no3, tree0_no3, forbidden0_no3 = aw.walk(
         tests_data_path / 'Folder0', exclusion=['Folder3'])
-    listing3, tree3, forbidden3 = aw.walk(tests_data_path / 'Folder0' / 'Folder3')
+    listing3, tree3, forbidden3 = aw.walk(
+        tests_data_path / 'Folder0' / 'Folder3')
     listing, tree, forbidden = aw.unify([listing0_no3, listing3],
-                                         [tree0_no3, tree3],
-                                         [forbidden0_no3, forbidden3])
-    listing0_full, tree0_full, forbidden0_full = aw.walk(tests_data_path / 'Folder0')
+                                        [tree0_no3, tree3],
+                                        [forbidden0_no3, forbidden3])
+    listing0_full, tree0_full, forbidden0_full = aw.walk(
+        tests_data_path / 'Folder0')
 
     # verify
     listing.pop(('7e472b2b54ba97314c63988db267d125', 'DIR', 2698920))
@@ -150,16 +152,18 @@ def test_duplicate_with_zip():
             tests_data_path)
 
     # verify
-    assert duplicate_listing[('4f8c48630a797715e8b86466e0218aa1', 'DIR', 3598557)] == \
-           {tests_data_path / 'Folder0',
-            tests_data_path / 'FolderZipFile',
-            tests_data_path / 'FolderZipFolder',
-            tests_data_path / 'FolderZipNested'}
+    assert duplicate_listing[
+               ('4f8c48630a797715e8b86466e0218aa1', 'DIR', 3598557)] == \
+        {tests_data_path / 'Folder0',
+         tests_data_path / 'FolderZipFile',
+         tests_data_path / 'FolderZipFolder',
+         tests_data_path / 'FolderZipNested'}
 
 
 def test_missing_fully_included():
     # run
-    listing3, tree3, forbidden3 = aw.walk(tests_data_path / 'Folder0' / 'Folder3')
+    listing3, tree3, forbidden3 = aw.walk(
+        tests_data_path / 'Folder0' / 'Folder3')
     listing0, tree0, forbidden0 = aw.walk(tests_data_path / 'Folder0')
     missing_listing = aw.get_missing(listing3, listing0)
 

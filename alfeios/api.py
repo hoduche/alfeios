@@ -9,13 +9,14 @@ def index(path):
 
     - Index all file and directory contents in a root directory
       including the inside of zip, tar, gztar, bztar and xztar compressed files
-    - Contents are identified by their hash-code, type (file or directory) and size
+    - Contents are identified by their hash-code, type (file or directory) and
+      size
     - It saves three files in the root directory:
        - A listing.json file that is a dictionary: content -> list of paths
        - A tree.json.file that is a dictionary: path -> content
        - A forbidden.json file that lists paths with no access
-    - In case there is no write access to the root directory,
-      the output files are saved in a temp folder of the filesystem with a unique identifier
+    - In case of no write access to the root directory, the output files are
+      saved in a temp folder of the filesystem with a unique identifier
 
     Args:
         path (str or pathlib.Path): path to the root directory
@@ -36,20 +37,22 @@ def duplicate(path, save_listing=False):
     """
 
     - List all duplicated files and directories in a root directory
-    - Save the duplicate listing as a duplicate_listing.json file in the root directory
+    - Save result as a duplicate_listing.json file in the root directory
     - Print the potential space gain
-    - If a listing.json file is passed as positional argument instead of a root directory,
-      the listing is deserialized from the json file instead of being generated
-      which is significantly quicker but of course less up to date
-    - Can also save the listing.json, tree.json and forbidden.json files in the root directory
-    - In case there is no write access to the root directory,
-      the output files are saved in a temp folder of the filesystem with a unique identifier
+    - If a listing.json file is passed as positional argument instead of a root
+      directory, the listing is deserialized from the json file instead of
+      being generated, which is significantly quicker but of course less up to
+      date
+    - Can save the listing.json, tree.json and forbidden.json files in the root
+      directory
+    - In case of no write access to the root directory, the output files are
+      saved in a temp folder of the filesystem with a unique identifier
 
     Args:
-        path (str or pathlib.Path): path to the root directory to parse
-                                    or the listing.json file to deserialize
-        save_listing (bool): flag to save the listing.json, tree.json and forbidden.json files
-                             in the root directory
+        path (str or pathlib.Path): path to the root directory to parse or the
+                                    listing.json file to deserialize
+        save_listing (bool): flag to save the listing.json, tree.json and
+                             forbidden.json files in the root directory
                              default is False
     """
 
@@ -72,7 +75,8 @@ def duplicate(path, save_listing=False):
     if duplicate_listing:
         foreword = 'You can gain '
         afterword = 'bytes space by going through duplicate_listing.json'
-        ai.save_json_listing(duplicate_listing, folder_path / 'duplicate_listing.json')
+        ai.save_json_listing(duplicate_listing,
+                             folder_path / 'duplicate_listing.json')
         if size_gain < 1E3:
             print(foreword + f'{size_gain} ' + afterword)
         elif size_gain < 1E6:
@@ -92,21 +96,24 @@ def missing(old_path, new_path, save_listing=False):
 
     - List all files and directories that are present in an old root directory
       and that are missing in a new one
-    - Save the missing listing as a missing_listing.json file in the new root directory
-    - If a listing.json file is passed as a positional argument instead of a root directory,
-      the corresponding listing is deserialized from the json file instead of being generated
-      which is significantly quicker but of course less up to date
-    - Can also save the listing.json, tree.json and forbidden.json files in the two root directories
-    - In case there is no write access to the new root directory,
-      the output files are saved in a temp folder of the filesystem with a unique identifier
+    - Save result as a missing_listing.json file in the new root directory
+    - Print the number of missing files
+    - If a listing.json file is passed as positional argument instead of a root
+      directory, the corresponding listing is deserialized from the json file
+      instead of being generated, which is significantly quicker but of course
+      less up to date
+    - Can save the listing.json, tree.json and forbidden.json files in the 2
+      root directories
+    - In case of no write access to the new root directory, the output files
+      are saved in a temp folder of the filesystem with a unique identifier
 
     Args:
         old_path (str or pathlib.Path): path to the old root directory to parse
-                                    or the listing.json file to deserialize
+                                        or the listing.json file to deserialize
         new_path (str or pathlib.Path): path to the new root directory to parse
-                                    or the listing.json file to deserialize
-        save_listing (bool): flag to save the listing.json, tree.json and forbidden.json files
-                             in the two root directories
+                                        or the listing.json file to deserialize
+        save_listing (bool): flag to save the listing.json, tree.json
+                             and forbidden.json files in the 2 root directories
                              default is False
     """
 
@@ -119,7 +126,8 @@ def missing(old_path, new_path, save_listing=False):
         if save_listing:
             ai.save_json_listing(old_listing, old_folder_path / 'listing.json')
             ai.save_json_tree(old_tree, old_folder_path / 'tree.json')
-            ai.save_json_forbidden(old_forbidden, old_folder_path / 'forbidden.json')
+            ai.save_json_forbidden(old_forbidden,
+                                   old_folder_path / 'forbidden.json')
     else:
         print(f'Old is not a valid path - exiting')
         return
@@ -134,15 +142,17 @@ def missing(old_path, new_path, save_listing=False):
         if save_listing:
             ai.save_json_listing(new_listing, new_folder_path / 'listing.json')
             ai.save_json_tree(new_tree, new_folder_path / 'tree.json')
-            ai.save_json_forbidden(new_forbidden, new_folder_path / 'forbidden.json')
+            ai.save_json_forbidden(new_forbidden,
+                                   new_folder_path / 'forbidden.json')
     else:
         print(f'New is not a valid path - exiting')
         return
 
     missing_listing = aw.get_missing(old_listing, new_listing)
     if missing_listing:
-        ai.save_json_listing(missing_listing, new_folder_path / 'missing_listing.json')
+        ai.save_json_listing(missing_listing,
+                             new_folder_path / 'missing_listing.json')
         print(f'There are {len(missing_listing)} Old files missing in New'
-               ' - please go through missing_listing.json')
+              ' - please go through missing_listing.json')
     else:
         print(f'Congratulations Old content is totally included in New')

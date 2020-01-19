@@ -12,7 +12,8 @@ def find_readme():
 
 def find_requirements():
     with open('requirements.txt', encoding='utf-8') as requirements_file:
-        return [each_line.strip() for each_line in requirements_file.read().splitlines()]
+        return [each_line.strip()
+                for each_line in requirements_file.read().splitlines()]
 
 
 def find_version():
@@ -26,7 +27,8 @@ def find_version():
 setup(
     name='alfeios',
     version=find_version(),
-    description='Walk your file system to check duplicate or missing files',
+    description='Enrich your command-line shell with Herculean cleaning'
+                ' capabilities',
     long_description=find_readme(),
     long_description_content_type='text/markdown',
     url='https://github.com/hoduche/alfeios',
@@ -34,7 +36,8 @@ setup(
     author='Henri-Olivier Duché',
     author_email='hoduche@yahoo.fr',
     license='MIT',
-    keywords='fs filesystem file system walk crawl files duplicate missing content hash hashcode checksum zip',
+    keywords='fs filesystem file system walk crawl files duplicate missing'
+             ' content hash hashcode checksum zip',
     packages=find_packages(),
     include_package_data=True,
     install_requires=find_requirements(),

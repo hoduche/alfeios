@@ -1,1 +1,4 @@
  * resolve path to be absolute everywhere -> tests break
+ * use tqdm to display a progress bar
+ * delete full_log.txt and errors.txt
+ * merge api_work.sh and readme
