@@ -3,24 +3,25 @@
 ### Enrich your command-line shell with Herculean cleaning capabilities
 ___
 
-As his fifth labour, Heracles was charged with cleaning the [Augean stables
+As fifth Labour, Heracles was charged with cleaning the [Augean stables
 ](https://en.wikipedia.org/wiki/Labours_of_Hercules#Fifth:_Augean_stables).
-The beautiful stables had not been cleaned for thirty years and were overshadowed in
-filth.
-Instead of turning to the mop and bucket, Heracles used a disruptive tool:
+The beautiful stables had not been cleaned for thirty years and were 
+overshadowed in filth.
+Instead of turning to the mop and bucket,
+Heracles used a radically innovative tool:
 the [Alfeios river](https://en.wikipedia.org/wiki/Alfeios) waters 
 and managed to wash everything in just one day.
 
 Let's do a comparison with the data on your hard drives.
-Backups have been made, files have been renamed, folders have been moved ...
-Slowly but surely things have diverged significantly,
+Backups have been made, files have been renamed, directories have been moved 
+... Slowly but surely things have diverged significantly,
 up to a point where you did not feel safe to delete anything.
 That is where things got worse as you started accumulating
-duplicates, sacrificing all control on your data.
+duplicates, sacrificing all hopes to control your data.
 As a result cleaning your hard drives now appears to you as the fifth labour
 of Heracles, humanly impossible.
 
-Alfeios is the disruptive tool that makes this overwhelming task feasible.
+Alfeios is an innovative tool that makes this overwhelming task feasible.
 It recursively indexes the content of your hard drives, going inside zip, tar, 
 gztar, bztar and xztar compressed files.
 Its index is content-based, meaning that two files with different names and 

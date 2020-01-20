@@ -8,17 +8,16 @@ import alfeios.api
 def main():
     # create the top-level alfeios parser
     parser = dsargparse.ArgumentParser(
-        description='Enrich your command-line shell with Herculean cleaning'
-                    ' capabilities',
+        description='Enrich your command-line shell with Herculean cleaning '
+                    'capabilities',
         usage='alfeios [-h] <command> [<args>]',
-        epilog='''
-        ''',
+        epilog="See 'alfeios <command> -h' for help on a specific command",
         formatter_class=dsargparse.RawTextHelpFormatter
     )
     subparsers_factory = parser.add_subparsers(
         title='Alfeios commands',
-        prog='alfeios',  # mandatory as usage has been overwritten
-                         # in alfeios parser
+        prog='alfeios',  # mandatory for subcommand help
+                         # as usage has been overwritten in alfeios parser
         metavar=' ' * 21  # hack to display help on one-liners
     )
 

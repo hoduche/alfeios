@@ -17,7 +17,7 @@ def index(path):
          (the listing.json dual)
        - A forbidden.json file that lists paths with no access
     - In case of no write access to the root directory, the output files are
-      saved in a temp folder of the filesystem with a unique identifier
+      saved in a temp directory of the filesystem with a unique identifier
 
     Args:
         path (str or pathlib.Path): path to the root directory
@@ -47,7 +47,7 @@ def duplicate(path, save_index=False):
     - Can save the listing.json, tree.json and forbidden.json files in the root
       directory
     - In case of no write access to the root directory, the output files are
-      saved in a temp folder of the filesystem with a unique identifier
+      saved in a temp directory of the filesystem with a unique identifier
 
     Args:
         path (str or pathlib.Path): path to the root directory to parse or the
@@ -60,14 +60,15 @@ def duplicate(path, save_index=False):
     path = pathlib.Path(path)
     if path.is_file() and path.name == 'listing.json':
         listing = ai.load_json_listing(path)
-        folder_path = path.parent
+        directory_path = path.parent
     elif path.is_dir():
         listing, tree, forbidden = aw.walk(path)
-        folder_path = path
+        directory_path = path
         if save_index:
-            ai.save_json_listing(listing, folder_path / 'listing.json')
-            ai.save_json_tree(tree, folder_path / 'tree.json')
-            ai.save_json_forbidden(forbidden, folder_path / 'forbidden.json')
+            ai.save_json_listing(listing, directory_path / 'listing.json')
+            ai.save_json_tree(tree, directory_path / 'tree.json')
+            ai.save_json_forbidden(forbidden,
+                                   directory_path / 'forbidden.json')
     else:
         print(f'This is not a valid path - exiting')
         return
@@ -77,7 +78,7 @@ def duplicate(path, save_index=False):
         foreword = 'You can gain '
         afterword = 'bytes space by going through duplicate_listing.json'
         ai.save_json_listing(duplicate_listing,
-                             folder_path / 'duplicate_listing.json')
+                             directory_path / 'duplicate_listing.json')
         if size_gain < 1E3:
             print(foreword + f'{size_gain} ' + afterword)
         elif size_gain < 1E6:
@@ -106,7 +107,7 @@ def missing(old_path, new_path, save_index=False):
     - Can save the listing.json, tree.json and forbidden.json files in the 2
       root directories
     - In case of no write access to the new root directory, the output files
-      are saved in a temp folder of the filesystem with a unique identifier
+      are saved in a temp directory of the filesystem with a unique identifier
 
     Args:
         old_path (str or pathlib.Path): path to the old root directory to parse
@@ -123,12 +124,13 @@ def missing(old_path, new_path, save_index=False):
         old_listing = ai.load_json_listing(old_path)
     elif old_path.is_dir():
         old_listing, old_tree, old_forbidden = aw.walk(old_path)
-        old_folder_path = old_path
+        old_directory_path = old_path
         if save_index:
-            ai.save_json_listing(old_listing, old_folder_path / 'listing.json')
-            ai.save_json_tree(old_tree, old_folder_path / 'tree.json')
+            ai.save_json_listing(old_listing,
+                                 old_directory_path / 'listing.json')
+            ai.save_json_tree(old_tree, old_directory_path / 'tree.json')
             ai.save_json_forbidden(old_forbidden,
-                                   old_folder_path / 'forbidden.json')
+                                   old_directory_path / 'forbidden.json')
     else:
         print(f'Old is not a valid path - exiting')
         return
@@ -136,15 +138,16 @@ def missing(old_path, new_path, save_index=False):
     new_path = pathlib.Path(new_path)
     if new_path.is_file() and new_path.name == 'listing.json':
         new_listing = ai.load_json_listing(new_path)
-        new_folder_path = new_path.parent
+        new_directory_path = new_path.parent
     elif new_path.is_dir():
         new_listing, new_tree, new_forbidden = aw.walk(new_path)
-        new_folder_path = new_path
+        new_directory_path = new_path
         if save_index:
-            ai.save_json_listing(new_listing, new_folder_path / 'listing.json')
-            ai.save_json_tree(new_tree, new_folder_path / 'tree.json')
+            ai.save_json_listing(new_listing,
+                                 new_directory_path / 'listing.json')
+            ai.save_json_tree(new_tree, new_directory_path / 'tree.json')
             ai.save_json_forbidden(new_forbidden,
-                                   new_folder_path / 'forbidden.json')
+                                   new_directory_path / 'forbidden.json')
     else:
         print(f'New is not a valid path - exiting')
         return
@@ -152,7 +155,7 @@ def missing(old_path, new_path, save_index=False):
     missing_listing = aw.get_missing(old_listing, new_listing)
     if missing_listing:
         ai.save_json_listing(missing_listing,
-                             new_folder_path / 'missing_listing.json')
+                             new_directory_path / 'missing_listing.json')
         print(f'There are {len(missing_listing)} Old files missing in New'
               ' - please go through missing_listing.json')
     else:

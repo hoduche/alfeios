@@ -1,15 +1,18 @@
  * check what dsargparse can simplify in cli.py
  * delete full_log.txt and errors.txt
  * help screen
-   tab completion
+   tab completion - argcomplete
    --version
 
  * do the whole HO use case with several old and several new root directories
  * use tqdm to display a progress bar
-   by default display a progress bar + write info, -q --quiet displays nothing
+ * by default display a progress bar + write info, -q --quiet displays nothing
+   vs --verbose ?
  * resolve path to be absolute everywhere -> tests break
 
  * unit tests on api and cli
+
+ * click, clickclick, click-plugins, docopt, docrep/docutils, plac
 
 ----------------------------------------------------------------
 commands to be tested automatically
