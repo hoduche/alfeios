@@ -3,6 +3,8 @@
 ### Enrich your command-line shell with Herculean cleaning capabilities
 ___
 
+![full](doc/augias.jpg)
+
 As fifth Labour, Heracles was charged with cleaning the [Augean stables
 ](https://en.wikipedia.org/wiki/Labours_of_Hercules#Fifth:_Augean_stables).
 The beautiful stables had not been cleaned for thirty years and were 
