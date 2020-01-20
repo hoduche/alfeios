@@ -1,5 +1,7 @@
 #!/usr/bin/env python
 
+import sys
+
 import dsargparse
 
 import alfeios.api
@@ -91,6 +93,9 @@ def main():
     )
 
     # parse command line and call appropriate function
+    if len(sys.argv) == 1 or sys.argv[1] in ['help', 'h']:
+        parser.print_help(sys.stderr)
+        sys.exit(1)
     return parser.parse_and_run()
 
 

@@ -1,7 +1,6 @@
  * check what dsargparse can simplify in cli.py
  * delete full_log.txt and errors.txt
- * help screen
-   tab completion - argcomplete
+ * tab completion - argcomplete
    --version
 
  * do the whole HO use case with several old and several new root directories
