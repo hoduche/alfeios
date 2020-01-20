@@ -4,6 +4,7 @@ import sys
 
 import dsargparse
 
+from alfeios import __version__
 import alfeios.api
 
 
@@ -16,6 +17,8 @@ def main():
         epilog="See 'alfeios <command> -h' for help on a specific command",
         formatter_class=dsargparse.RawTextHelpFormatter
     )
+    parser.add_argument('--version', action='version', version=__version__)
+
     subparsers_factory = parser.add_subparsers(
         title='Alfeios commands',
         prog='alfeios',  # mandatory for subcommand help

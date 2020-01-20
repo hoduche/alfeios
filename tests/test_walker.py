@@ -2,7 +2,7 @@ import pathlib
 
 import pytest
 
-import alfeios.io as aj
+import alfeios.serialize as asd
 import alfeios.walker as aw
 
 debug = False
@@ -24,35 +24,35 @@ def test_walk(folder, name):
 
     # for logging purpose only
     if debug:
-        aj.save_json_listing(
+        asd.save_json_listing(
             listing,
             tests_data_path / (name + '_listing.json'),
             tests_data_path)
-        aj.save_json_tree(
+        asd.save_json_tree(
             tree,
             tests_data_path / (name + '_tree.json'),
             tests_data_path)
-        aj.save_json_forbidden(
+        asd.save_json_forbidden(
             forbidden,
             tests_data_path / (name + '_forbidden.json'),
             tests_data_path)
 
     # load expected
-    expected_listing = aj.load_json_listing(
+    expected_listing = asd.load_json_listing(
         tests_data_path / (name + '_listing_expected.json'),
         tests_data_path)
-    expected_tree = aj.load_json_tree(
+    expected_tree = asd.load_json_tree(
         tests_data_path / (name + '_tree_expected.json'),
         tests_data_path)
 
     # verify
     if debug:
-        aj.save_json_tree(tree, tests_data_path / 'tree.json')
-        aj.save_json_tree(expected_tree,
-                          tests_data_path / 'expected_tree.json')
-        aj.save_json_listing(listing, tests_data_path / 'listing.json')
-        aj.save_json_listing(expected_listing,
-                             tests_data_path / 'expected_listing.json')
+        asd.save_json_tree(tree, tests_data_path / 'tree.json')
+        asd.save_json_tree(expected_tree,
+                           tests_data_path / 'expected_tree.json')
+        asd.save_json_listing(listing, tests_data_path / 'listing.json')
+        asd.save_json_listing(expected_listing,
+                              tests_data_path / 'expected_listing.json')
     assert listing == expected_listing
     assert tree == expected_tree
     assert forbidden == {}
@@ -68,24 +68,24 @@ def test_walk_with_exclusions():
 
     # for logging purpose only
     if debug:
-        aj.save_json_listing(
+        asd.save_json_listing(
             listing,
             tests_data_path / 'Folder0_listing_with_exclusions.json',
             tests_data_path)
-        aj.save_json_tree(
+        asd.save_json_tree(
             tree,
             tests_data_path / 'Folder0_tree_with_exclusions.json',
             tests_data_path)
-        aj.save_json_forbidden(
+        asd.save_json_forbidden(
             forbidden,
             tests_data_path / 'Folder0_forbidden_with_exclusions.json',
             tests_data_path)
 
     # load expected
-    expected_listing = aj.load_json_listing(
+    expected_listing = asd.load_json_listing(
         tests_data_path / 'Folder0_listing_with_exclusions_expected.json',
         tests_data_path)
-    expected_tree = aj.load_json_tree(
+    expected_tree = asd.load_json_tree(
         tests_data_path / 'Folder0_tree_with_exclusions_expected.json',
         tests_data_path)
 
@@ -124,13 +124,13 @@ def test_duplicate():
 
     # for logging purpose only
     if debug:
-        aj.save_json_listing(
+        asd.save_json_listing(
             duplicate_listing,
             tests_data_path / 'Folder3_duplicate_listing.json',
             tests_data_path)
 
     # load expected
-    expected_duplicate_listing = aj.load_json_listing(
+    expected_duplicate_listing = asd.load_json_listing(
         tests_data_path / 'Folder3_duplicate_listing_expected.json',
         tests_data_path)
 
@@ -146,7 +146,7 @@ def test_duplicate_with_zip():
 
     # for logging purpose only
     if debug:
-        aj.save_json_listing(
+        asd.save_json_listing(
             duplicate_listing,
             tests_data_path / 'duplicate.json',
             tests_data_path)
@@ -169,7 +169,7 @@ def test_missing_fully_included():
 
     # for logging purpose only
     if debug:
-        aj.save_json_listing(
+        asd.save_json_listing(
             missing_listing,
             tests_data_path / 'Folder3_missing_listing_in_Folder0.json',
             tests_data_path)
@@ -186,13 +186,13 @@ def test_missing_not_fully_included():
 
     # for logging purpose only
     if debug:
-        aj.save_json_listing(
+        asd.save_json_listing(
             missing_listing,
             tests_data_path / 'Folder8_missing_listing_in_Folder0.json',
             tests_data_path)
 
     # load expected
-    expected_missing_listing = aj.load_json_listing(
+    expected_missing_listing = asd.load_json_listing(
         tests_data_path / 'Folder8_missing_listing_in_Folder0_expected.json',
         tests_data_path)
 

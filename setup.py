@@ -1,27 +1,35 @@
 # -*- coding: UTF-8 -*-
 
+import pathlib
 import re
 
 from setuptools import setup, find_packages
 
+project_path = pathlib.Path(__file__).parent
+
 
 def find_readme():
-    with open('README.md', encoding='utf-8') as readme_file:
-        return readme_file.read()
+    with open(project_path / 'README.md', encoding='utf-8') as readme_file:
+        result = readme_file.read()
+        return result
 
 
 def find_requirements():
-    with open('requirements.txt', encoding='utf-8') as requirements_file:
-        return [each_line.strip()
-                for each_line in requirements_file.read().splitlines()]
+    with open(project_path / 'requirements.txt',
+              encoding='utf-8') as requirements_file:
+        result = [each_line.strip()
+                  for each_line in requirements_file.read().splitlines()]
+        return result
 
 
 def find_version():
-    with open('alfeios/__init__.py', encoding='utf-8') as version_file:
+    with open(project_path / 'alfeios' / '__init__.py',
+              encoding='utf-8') as version_file:
         pattern = '^__version__ = [\'\"]([^\'\"]*)[\'\"]'
         match = re.search(pattern, version_file.readline().strip())
         if match:
-            return match.group(1)
+            result = match.group(1)
+            return result
 
 
 setup(
