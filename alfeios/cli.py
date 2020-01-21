@@ -17,7 +17,8 @@ def main():
         epilog="See 'alfeios <command> -h' for help on a specific command",
         formatter_class=dsargparse.RawTextHelpFormatter
     )
-    parser.add_argument('--version', action='version', version=__version__)
+    parser.add_argument('-V', '--version', action='version',
+                        version=__version__)
 
     subparsers_factory = parser.add_subparsers(
         title='Alfeios commands',

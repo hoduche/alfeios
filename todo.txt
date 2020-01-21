@@ -1,17 +1,21 @@
- * check what dsargparse can simplify in cli.py
- * delete full_log.txt and errors.txt
  * tab completion - argcomplete
-   --version
+ * decide to create a .alfeios folder at root to store json result files ?
+   cache directory that is specific to your CLI
 
  * do the whole HO use case with several old and several new root directories
  * use tqdm to display a progress bar
- * by default display a progress bar + write info, -q --quiet displays nothing
-   vs --verbose ?
+ * by default display a progress bar + write info,
+   -q --quiet displays nothing vs -v --verbose ?
  * resolve path to be absolute everywhere -> tests break
 
  * unit tests on api and cli
+   maybe have a look at a cli framework: fire, cliff or cement
+   or rely more on ci tool like travis
 
- * click, clickclick, click-plugins, docopt, docrep/docutils, plac
+ * auto-documenting
+   to avoid manually change readme when changing command arguments
+   maybe have a look at docrep or docutils
+ * nice ui in cli: color, tables ...
 
 ----------------------------------------------------------------
 commands to be tested automatically
@@ -23,3 +27,13 @@ alfeios duplicate
 alfeios missing -> error
 alfeios missing tests/data/Folder8 tests/data/Folder0
 ...
+
+----------------------------------------------------------------
+errors met
+----------------------------------------------------------------
+FileNotFoundError 1
+shutil.ReadError 6
+FileExistsError 4
+RuntimeError 1
+OSError 14611
+PermissionError 5529
