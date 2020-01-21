@@ -4,6 +4,8 @@ import pathlib
 import shutil
 import tempfile
 
+import tqdm
+
 import alfeios.tool as at
 
 

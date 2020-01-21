@@ -1,4 +1,5 @@
 import pathlib
+import sys
 
 import alfeios.serialize as asd
 import alfeios.walker as aw
@@ -70,7 +71,7 @@ def duplicate(path, save_index=False):
             asd.save_json_forbidden(forbidden,
                                     directory_path / 'forbidden.json')
     else:
-        print(f'This is not a valid path - exiting')
+        print(f'This is not a valid path - exiting', file=sys.stderr)
         return
 
     duplicate_listing, size_gain = aw.get_duplicate(listing)

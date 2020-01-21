@@ -100,7 +100,13 @@ def main():
     if len(sys.argv) == 1 or sys.argv[1] in ['help', 'h']:
         parser.print_help(sys.stderr)
         sys.exit(1)
-    return parser.parse_and_run()
+
+    try:
+        return parser.parse_and_run()
+    except KeyboardInterrupt:
+        print('''
+Process interrupted''', file=sys.stderr)
+        sys.exit(1)
 
 
 # to debug real use cases, set in your Debug Configuration something like:

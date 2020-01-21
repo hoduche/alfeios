@@ -1,21 +1,24 @@
+ * use logging or print to stderr see isatty
  * tab completion - argcomplete
  * decide to create a .alfeios folder at root to store json result files ?
    cache directory that is specific to your CLI
 
  * do the whole HO use case with several old and several new root directories
+   probably use ';' to separate multiple new root directories
  * use tqdm to display a progress bar
  * by default display a progress bar + write info,
    -q --quiet displays nothing vs -v --verbose ?
  * resolve path to be absolute everywhere -> tests break
 
  * unit tests on api and cli
+   using subprocess to launch the entry points
    maybe have a look at a cli framework: fire, cliff or cement
    or rely more on ci tool like travis
 
  * auto-documenting
    to avoid manually change readme when changing command arguments
    maybe have a look at docrep or docutils
- * nice ui in cli: color, tables ...
+ * nice ui in cli: color (see colorama), tables ...
 
 ----------------------------------------------------------------
 commands to be tested automatically
