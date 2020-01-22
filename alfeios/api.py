@@ -26,7 +26,7 @@ def index(path):
 
     path = pathlib.Path(path)
     if path.is_dir():
-        listing, tree, forbidden = aw.walk(path)
+        listing, tree, forbidden = aw.walk(path, create_pbar=True)
         asd.save_json_listing(listing, path / 'listing.json')
         asd.save_json_tree(tree, path / 'tree.json')
         asd.save_json_forbidden(forbidden, path / 'forbidden.json')
@@ -63,7 +63,7 @@ def duplicate(path, save_index=False):
         listing = asd.load_json_listing(path)
         directory_path = path.parent
     elif path.is_dir():
-        listing, tree, forbidden = aw.walk(path)
+        listing, tree, forbidden = aw.walk(path, create_pbar=True)
         directory_path = path
         if save_index:
             asd.save_json_listing(listing, directory_path / 'listing.json')
@@ -124,7 +124,8 @@ def missing(old_path, new_path, save_index=False):
     if old_path.is_file() and old_path.name == 'listing.json':
         old_listing = asd.load_json_listing(old_path)
     elif old_path.is_dir():
-        old_listing, old_tree, old_forbidden = aw.walk(old_path)
+        old_listing, old_tree, old_forbidden = aw.walk(old_path,
+                                                       create_pbar=True)
         old_directory_path = old_path
         if save_index:
             asd.save_json_listing(old_listing,
@@ -141,7 +142,8 @@ def missing(old_path, new_path, save_index=False):
         new_listing = asd.load_json_listing(new_path)
         new_directory_path = new_path.parent
     elif new_path.is_dir():
-        new_listing, new_tree, new_forbidden = aw.walk(new_path)
+        new_listing, new_tree, new_forbidden = aw.walk(new_path,
+                                                       create_pbar=True)
         new_directory_path = new_path
         if save_index:
             asd.save_json_listing(new_listing,

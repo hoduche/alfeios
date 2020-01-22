@@ -1,5 +1,6 @@
 import collections
 import hashlib
+import os
 import pathlib
 import shutil
 import tempfile
@@ -14,7 +15,25 @@ FILE_TYPE = 'FILE'
 DIR_TYPE = 'DIR'
 
 
-def walk(path, exclusion=None):
+def compute_size(path, create_pbar=False):
+    if create_pbar:
+        pbar = tqdm.tqdm(unit=' files')
+    nb_files = 0
+    total_size = 0
+    for dir_path_string, subdir_names, file_names in os.walk(path):
+        for file_name in file_names:
+            file_path = pathlib.Path(dir_path_string) / file_name
+            file_size = file_path.stat().st_size
+            nb_files += 1
+            total_size += file_size
+            if create_pbar:
+                pbar.update()
+    if create_pbar:
+        pbar.close()
+    return nb_files, total_size
+
+
+def walk(path, exclusion=None, create_pbar=False):
     """ Recursively walks through a root directory to index its content
 
     It manages three data structures:
@@ -45,13 +64,22 @@ def walk(path, exclusion=None):
     tree = dict()
     forbidden = dict()
 
+    nb_files, total_size = compute_size(path, create_pbar)
+
 #    path = path.resolve()
-    _recursive_walk(path, listing, tree, forbidden, exclusion)
+    if create_pbar:
+        pbar = tqdm.tqdm(total=2*total_size, desc='indexing',
+                         unit='B', unit_scale=True, unit_divisor=1024)
+    else:
+        pbar = None
+    _recursive_walk(path, listing, tree, forbidden, exclusion, pbar)
+    if create_pbar:
+        pbar.close()
 
     return listing, tree, forbidden
 
 
-def _recursive_walk(path, listing, tree, forbidden, exclusion):
+def _recursive_walk(path, listing, tree, forbidden, exclusion, pbar):
     if path.is_dir():
         dir_content_size = 0
         dir_content_hash_list = []
@@ -60,7 +88,7 @@ def _recursive_walk(path, listing, tree, forbidden, exclusion):
                 if each_child.name not in exclusion and\
                         not each_child.is_symlink():
                     _recursive_walk(each_child, listing, tree, forbidden,
-                                    exclusion)
+                                    exclusion, pbar)
                     if each_child not in forbidden:
                         dir_content_size += tree[each_child][2]
                         dir_content_hash_list.append(tree[each_child][0])
@@ -78,30 +106,34 @@ def _recursive_walk(path, listing, tree, forbidden, exclusion):
         try:
             # v3.7 accepts pathlib as extract_dir=
             shutil.unpack_archive(str(path), extract_dir=str(temp_dir_path))
-            zip_listing, zip_tree, zip_forbidden = walk(temp_dir_path)
+            zip_listing, zip_tree, zip_forbidden = walk(temp_dir_path,
+                                                        create_pbar=False)
             _append_listing(listing, zip_listing, path, temp_dir_path)
             _append_tree(tree, zip_tree, path, temp_dir_path)
             _append_forbidden(forbidden, zip_forbidden, path, temp_dir_path)
         except (shutil.ReadError, OSError, Exception) as e:
             forbidden[path] = type(e)
-            _hash_and_index_file(path, listing, tree)
+            _hash_and_index_file(path, listing, tree, pbar)
         finally:
             shutil.rmtree(temp_dir_path)
 
     elif path.is_file():
-        _hash_and_index_file(path, listing, tree)
+        _hash_and_index_file(path, listing, tree, pbar)
 
     else:
         forbidden[path] = Exception
 
 
-def _hash_and_index_file(path, listing, tree):
+def _hash_and_index_file(path, listing, tree, pbar):
     file_hasher = hashlib.md5()
     with path.open(mode='rb') as file_content:
         content_stream = file_content.read(BLOCK_SIZE)
         while len(content_stream) > 0:
             file_hasher.update(content_stream)
             content_stream = file_content.read(BLOCK_SIZE)
+            if pbar:
+                pbar.set_postfix(file=str(path)[-10:], refresh=False)
+                pbar.update(BLOCK_SIZE)
     file_content_hash = file_hasher.hexdigest()
     file_content_size = path.stat().st_size
     file_content_key = (file_content_hash, FILE_TYPE, file_content_size)
@@ -169,3 +201,8 @@ def _append_forbidden(forbidden, additional_forbidden, start_path, temp_path):
         relative_path_key = at.build_relative_path(path_key, temp_path)
         absolute_path_key = start_path / relative_path_key
         forbidden[absolute_path_key] = exception_value
+
+
+if __name__ == '__main__':
+    path = pathlib.Path('C:\\netBeansProjects')
+    listing, tree, forbidden = walk(path, create_pbar=True)
