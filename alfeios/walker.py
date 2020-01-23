@@ -1,4 +1,5 @@
 import collections
+import enum
 import hashlib
 import os
 import pathlib
@@ -11,8 +12,11 @@ import alfeios.tool as at
 
 
 BLOCK_SIZE = 65536  # ie 64 Ko
-FILE_TYPE = 'FILE'
-DIR_TYPE = 'DIR'
+
+
+class PathType(str, enum.Enum):
+    FILE = 'FILE'
+    DIR = 'DIR'
 
 
 def compute_size(path, create_pbar=False):
@@ -38,13 +42,13 @@ def walk(path, exclusion=None, create_pbar=False):
 
     It manages three data structures:
     - listing   : the most important one: a collections.defaultdict(set) whose
-                  keys are 3-tuples (hash, type, size) and values are list of
-                  pathlib.Path
+                  keys are 3-tuples (hash-code, path-type, size) and values are
+                  list of pathlib.Path
     - tree      : the listing dual: a dictionary whose keys are pathlib.Path
-                  and values are 3-tuples (hash, type, size)
+                  and values are 3-tuples (hash-code, path-type, size)
     - forbidden : the no-access list: a dictionary whose keys are pathlib.Path
                   and values are Exceptions
-    in listing and tree, the type distinguishes files from directories
+    in listing and tree, the path-type distinguishes files from directories
 
     Args:
         path (pathlib.Path): path to the root directory to parse
@@ -52,8 +56,8 @@ def walk(path, exclusion=None, create_pbar=False):
 
     Returns:
         listing   : collections.defaultdict(set) =
-                    {(hash, type, int): {pathlib.Path}}
-        tree      : dict = {pathlib.Path: (hash, type, int)}
+                    {(hash-code, path-type, int): {pathlib.Path}}
+        tree      : dict = {pathlib.Path: (hash-code, path-type, int)}
         forbidden : dict = {pathlib.Path: Exception}
     """
 
@@ -96,7 +100,7 @@ def _recursive_walk(path, listing, tree, forbidden, exclusion, pbar):
                 forbidden[each_child] = type(e)
         dir_content = '\n'.join(sorted(dir_content_hash_list))
         dir_content_hash = hashlib.md5(dir_content.encode()).hexdigest()
-        dir_content_key = (dir_content_hash, DIR_TYPE, dir_content_size)
+        dir_content_key = (dir_content_hash, PathType.DIR, dir_content_size)
         listing[dir_content_key].add(path)
         tree[path] = dir_content_key
 
@@ -136,7 +140,7 @@ def _hash_and_index_file(path, listing, tree, pbar):
                 pbar.update(BLOCK_SIZE)
     file_content_hash = file_hasher.hexdigest()
     file_content_size = path.stat().st_size
-    file_content_key = (file_content_hash, FILE_TYPE, file_content_size)
+    file_content_key = (file_content_hash, PathType.FILE, file_content_size)
     listing[file_content_key].add(path)
     tree[path] = file_content_key
 
@@ -154,20 +158,20 @@ def get_duplicate(listing):
 
 def get_missing(old_listing, new_listing):
     non_included = {k: v for k, v in old_listing.items()
-                    if (k not in new_listing and k[1] == FILE_TYPE)}
+                    if (k not in new_listing and k[1] == PathType.FILE)}
     result = collections.defaultdict(set, non_included)
     return result
 
 
 def unify(listings, trees, forbiddens):
-    tree = dict()  # = {pathlib.Path: (hash, type, int)}
+    tree = dict()  # = {pathlib.Path: (hash-code, path-type, int)}
     for each_tree in trees:
         for k, v in each_tree.items():
             if (k not in tree) or (tree[k][2] < v[2]):
                 tree[k] = v
 
     listing = collections.defaultdict(set)
-    # = {(hash, type, int): {pathlib.Path}}
+    # = {(hash-code, path-type, int): {pathlib.Path}}
     for each_listing in listings:
         for k, v in each_listing.items():
             for each_v in v:

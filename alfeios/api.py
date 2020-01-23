@@ -10,8 +10,8 @@ def index(path):
 
     - Index all file and directory contents in a root directory
       including the inside of zip, tar, gztar, bztar and xztar compressed files
-    - Contents are identified by their hash-code, type (file or directory) and
-      size
+    - Contents are identified by their hash-code, path-type (file or directory)
+      and size
     - It saves three files in the root directory:
        - A listing.json file that is a dictionary: content -> list of paths
        - A tree.json.file that is a dictionary: path -> content
