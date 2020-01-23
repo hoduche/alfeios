@@ -1,6 +1,8 @@
 import pathlib
 import sys
 
+import colorama
+
 import alfeios.serialize as asd
 import alfeios.walker as aw
 
@@ -31,7 +33,8 @@ def index(path):
         asd.save_json_tree(tree, path / 'tree.json')
         asd.save_json_forbidden(forbidden, path / 'forbidden.json')
     else:
-        print(f'This is not a valid path - exiting')
+        print(colorama.Fore.RED + f'This is not a valid path - exiting',
+              file=sys.stderr)
         return
 
 
@@ -71,7 +74,8 @@ def duplicate(path, save_index=False):
             asd.save_json_forbidden(forbidden,
                                     directory_path / 'forbidden.json')
     else:
-        print(f'This is not a valid path - exiting', file=sys.stderr)
+        print(colorama.Fore.RED + f'This is not a valid path - exiting',
+              file=sys.stderr)
         return
 
     duplicate_listing, size_gain = aw.get_duplicate(listing)
@@ -81,17 +85,23 @@ def duplicate(path, save_index=False):
         asd.save_json_listing(duplicate_listing,
                               directory_path / 'duplicate_listing.json')
         if size_gain < 1E3:
-            print(foreword + f'{size_gain} ' + afterword)
+            print(colorama.Fore.GREEN +
+                  foreword + f'{size_gain} ' + afterword)
         elif size_gain < 1E6:
-            print(foreword + f'{size_gain / 1E3:.2f} Kilo' + afterword)
+            print(colorama.Fore.GREEN +
+                  foreword + f'{size_gain / 1E3:.2f} Kilo' + afterword)
         elif size_gain < 1E9:
-            print(foreword + f'{size_gain / 1E6:.2f} Mega' + afterword)
+            print(colorama.Fore.GREEN +
+                  foreword + f'{size_gain / 1E6:.2f} Mega' + afterword)
         elif size_gain < 1E12:
-            print(foreword + f'{size_gain / 1E9:.2f} Giga' + afterword)
+            print(colorama.Fore.GREEN +
+                  foreword + f'{size_gain / 1E9:.2f} Giga' + afterword)
         else:
-            print(foreword + f'{size_gain / 1E12:.2f} Tera' + afterword)
+            print(colorama.Fore.GREEN +
+                  foreword + f'{size_gain / 1E12:.2f} Tera' + afterword)
     else:
-        print(f'Congratulations there is no duplicate here')
+        print(colorama.Fore.GREEN +
+              f'Congratulations there is no duplicate here')
 
 
 def missing(old_path, new_path, save_index=False):
@@ -134,7 +144,8 @@ def missing(old_path, new_path, save_index=False):
             asd.save_json_forbidden(old_forbidden,
                                     old_directory_path / 'forbidden.json')
     else:
-        print(f'Old is not a valid path - exiting')
+        print(colorama.Fore.RED + f'Old is not a valid path - exiting',
+              file=sys.stderr)
         return
 
     new_path = pathlib.Path(new_path)
@@ -152,14 +163,17 @@ def missing(old_path, new_path, save_index=False):
             asd.save_json_forbidden(new_forbidden,
                                     new_directory_path / 'forbidden.json')
     else:
-        print(f'New is not a valid path - exiting')
+        print(colorama.Fore.RED + f'New is not a valid path - exiting',
+              file=sys.stderr)
         return
 
     missing_listing = aw.get_missing(old_listing, new_listing)
     if missing_listing:
         asd.save_json_listing(missing_listing,
                               new_directory_path / 'missing_listing.json')
-        print(f'There are {len(missing_listing)} Old files missing in New'
+        print(colorama.Fore.GREEN +
+              f'There are {len(missing_listing)} Old files missing in New'
               ' - please go through missing_listing.json')
     else:
-        print(f'Congratulations Old content is totally included in New')
+        print(colorama.Fore.GREEN +
+              f'Congratulations Old content is totally included in New')

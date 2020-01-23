@@ -2,6 +2,7 @@
 
 import sys
 
+import colorama
 import dsargparse
 
 from alfeios import __version__
@@ -9,6 +10,8 @@ import alfeios.api
 
 
 def main():
+    colorama.init(autoreset=True)
+
     # create the top-level alfeios parser
     parser = dsargparse.ArgumentParser(
         description='Enrich your command-line shell with Herculean cleaning '

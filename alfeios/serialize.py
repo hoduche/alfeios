@@ -1,5 +1,6 @@
 import ast
 import collections
+import colorama
 import json
 import pathlib
 import tempfile
@@ -121,7 +122,8 @@ def _write_text(content_string, file_path):
         file_path.write_text(content_string)
         print(f'{file_path.name} written on {file_path.parent}')
     except (PermissionError, Exception) as e:
-        print(f'Not authorized to write {file_path.name}'
+        print(colorama.Fore.RED +
+              f'Not authorized to write {file_path.name}'
               f' on {file_path.parent}: {type(e)}')
         temp_file_path = tempfile.mkstemp(prefix=file_path.stem + '_',
                                           suffix=file_path.suffix)[1]
@@ -130,6 +132,8 @@ def _write_text(content_string, file_path):
             temp_file_path.write_text(content_string)
             print(f'{temp_file_path.name} written on {temp_file_path.parent}')
         except (PermissionError, Exception) as e:
-            print(f'Not authorized to write {temp_file_path.name}'
+            print(colorama.Fore.RED +
+                  f'Not authorized to write {temp_file_path.name}'
                   f' on {temp_file_path.parent}: {type(e)}')
-            print(f'{file_path.name} not written')
+            print(colorama.Fore.RED +
+                  f'{file_path.name} not written')

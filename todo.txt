@@ -18,7 +18,7 @@
  * auto-documenting
    to avoid manually change readme when changing command arguments
    maybe have a look at docrep or docutils
- * nice ui in cli: color (see colorama), tables ...
+ * nice ui in cli: tables ...
 
 ----------------------------------------------------------------
 commands to be tested automatically
