@@ -5,6 +5,7 @@ import colorama
 
 import alfeios.serialize as asd
 import alfeios.walker as aw
+import alfeios.tool as at
 
 
 def index(path):
@@ -80,25 +81,11 @@ def duplicate(path, save_index=False):
 
     duplicate_listing, size_gain = aw.get_duplicate(listing)
     if duplicate_listing:
-        foreword = 'You can gain '
-        afterword = 'bytes space by going through duplicate_listing.json'
         asd.save_json_listing(duplicate_listing,
                               directory_path / 'duplicate_listing.json')
-        if size_gain < 1E3:
-            print(colorama.Fore.GREEN +
-                  foreword + f'{size_gain} ' + afterword)
-        elif size_gain < 1E6:
-            print(colorama.Fore.GREEN +
-                  foreword + f'{size_gain / 1E3:.2f} Kilo' + afterword)
-        elif size_gain < 1E9:
-            print(colorama.Fore.GREEN +
-                  foreword + f'{size_gain / 1E6:.2f} Mega' + afterword)
-        elif size_gain < 1E12:
-            print(colorama.Fore.GREEN +
-                  foreword + f'{size_gain / 1E9:.2f} Giga' + afterword)
-        else:
-            print(colorama.Fore.GREEN +
-                  foreword + f'{size_gain / 1E12:.2f} Tera' + afterword)
+        print(colorama.Fore.GREEN +
+              f'You can gain {at.natural_size(size_gain)} '
+              'space by going through duplicate_listing.json')
     else:
         print(colorama.Fore.GREEN +
               f'Congratulations there is no duplicate here')
