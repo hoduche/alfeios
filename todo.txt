@@ -1,8 +1,3 @@
- * replace 3 save_something by 1 save_index(all vs listing only)
- * idem for load - load_json_tree not used !
- * decide to create a .alfeios folder at root to store json result files ?
-   cache directory that is specific to your CLI - see gitgraph
-
  * do the whole HO use case with several old and several new root directories
    probably use ';' to separate multiple new root directories
  * use tqdm to display a progress bar

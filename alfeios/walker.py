@@ -52,7 +52,7 @@ def walk(path, exclusion=None, create_pbar=False):
 
     Args:
         path (pathlib.Path): path to the root directory to parse
-        exclusion (list of str): list of directories and files not to parse
+        exclusion (set of str): set of directories and files not to parse
 
     Returns:
         listing   : collections.defaultdict(set) =
@@ -62,7 +62,9 @@ def walk(path, exclusion=None, create_pbar=False):
     """
 
     if not exclusion:
-        exclusion = []
+        exclusion = set()
+    exclusion.add('.alfeios')
+    exclusion.add('.alfeios_expected')
 
     listing = collections.defaultdict(set)
     tree = dict()

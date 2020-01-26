@@ -30,9 +30,7 @@ def index(path):
     path = pathlib.Path(path)
     if path.is_dir():
         listing, tree, forbidden = aw.walk(path, create_pbar=True)
-        asd.save_json_listing(listing, path / 'listing.json')
-        asd.save_json_tree(tree, path / 'tree.json')
-        asd.save_json_forbidden(forbidden, path / 'forbidden.json')
+        asd.save_json_index(path, listing, tree, forbidden)
     else:
         print(colorama.Fore.RED + f'This is not a valid path - exiting',
               file=sys.stderr)
@@ -63,17 +61,14 @@ def duplicate(path, save_index=False):
     """
 
     path = pathlib.Path(path)
-    if path.is_file() and path.name == 'listing.json':
+    if path.is_file() and path.name.endswith('listing.json'):
         listing = asd.load_json_listing(path)
         directory_path = path.parent
     elif path.is_dir():
         listing, tree, forbidden = aw.walk(path, create_pbar=True)
         directory_path = path
         if save_index:
-            asd.save_json_listing(listing, directory_path / 'listing.json')
-            asd.save_json_tree(tree, directory_path / 'tree.json')
-            asd.save_json_forbidden(forbidden,
-                                    directory_path / 'forbidden.json')
+            asd.save_json_index(directory_path, listing, tree, forbidden)
     else:
         print(colorama.Fore.RED + f'This is not a valid path - exiting',
               file=sys.stderr)
@@ -81,11 +76,12 @@ def duplicate(path, save_index=False):
 
     duplicate_listing, size_gain = aw.get_duplicate(listing)
     if duplicate_listing:
-        asd.save_json_listing(duplicate_listing,
-                              directory_path / 'duplicate_listing.json')
+        tag = asd.save_json_index(directory_path, duplicate_listing,
+                                  prefix='duplicate_')
+        result_path = directory_path / '.alfeios' / (tag + 'listing.json')
         print(colorama.Fore.GREEN +
               f'You can gain {at.natural_size(size_gain)} '
-              'space by going through duplicate_listing.json')
+              f'space by going through {str(result_path)}')
     else:
         print(colorama.Fore.GREEN +
               f'Congratulations there is no duplicate here')
@@ -118,25 +114,22 @@ def missing(old_path, new_path, save_index=False):
     """
 
     old_path = pathlib.Path(old_path)
-    if old_path.is_file() and old_path.name == 'listing.json':
+    if old_path.is_file() and old_path.name.endswith('listing.json'):
         old_listing = asd.load_json_listing(old_path)
     elif old_path.is_dir():
         old_listing, old_tree, old_forbidden = aw.walk(old_path,
                                                        create_pbar=True)
         old_directory_path = old_path
         if save_index:
-            asd.save_json_listing(old_listing,
-                                  old_directory_path / 'listing.json')
-            asd.save_json_tree(old_tree, old_directory_path / 'tree.json')
-            asd.save_json_forbidden(old_forbidden,
-                                    old_directory_path / 'forbidden.json')
+            asd.save_json_index(old_directory_path, old_listing, old_tree,
+                                old_forbidden)
     else:
         print(colorama.Fore.RED + f'Old is not a valid path - exiting',
               file=sys.stderr)
         return
 
     new_path = pathlib.Path(new_path)
-    if new_path.is_file() and new_path.name == 'listing.json':
+    if new_path.is_file() and new_path.name.endswith('listing.json'):
         new_listing = asd.load_json_listing(new_path)
         new_directory_path = new_path.parent
     elif new_path.is_dir():
@@ -144,11 +137,8 @@ def missing(old_path, new_path, save_index=False):
                                                        create_pbar=True)
         new_directory_path = new_path
         if save_index:
-            asd.save_json_listing(new_listing,
-                                  new_directory_path / 'listing.json')
-            asd.save_json_tree(new_tree, new_directory_path / 'tree.json')
-            asd.save_json_forbidden(new_forbidden,
-                                    new_directory_path / 'forbidden.json')
+            asd.save_json_index(new_directory_path, new_listing, new_tree,
+                                new_forbidden)
     else:
         print(colorama.Fore.RED + f'New is not a valid path - exiting',
               file=sys.stderr)
@@ -156,11 +146,12 @@ def missing(old_path, new_path, save_index=False):
 
     missing_listing = aw.get_missing(old_listing, new_listing)
     if missing_listing:
-        asd.save_json_listing(missing_listing,
-                              new_directory_path / 'missing_listing.json')
+        tag = asd.save_json_index(new_directory_path, missing_listing,
+                                  prefix='missing_')
+        result_path = new_directory_path / '.alfeios' / (tag + 'listing.json')
         print(colorama.Fore.GREEN +
               f'There are {len(missing_listing)} Old files missing in New'
-              ' - please go through missing_listing.json')
+              f' - please go through {str(result_path)}')
     else:
         print(colorama.Fore.GREEN +
               f'Congratulations Old content is totally included in New')
