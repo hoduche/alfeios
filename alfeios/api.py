@@ -2,6 +2,7 @@ import pathlib
 import sys
 
 import colorama
+import tqdm
 
 import alfeios.serialize as asd
 import alfeios.walker as aw
@@ -29,7 +30,7 @@ def index(path):
 
     path = pathlib.Path(path)
     if path.is_dir():
-        listing, tree, forbidden = aw.walk(path, create_pbar=True)
+        listing, tree, forbidden = _walk_with_progressbar(path)
         asd.save_json_index(path, listing, tree, forbidden)
     else:
         print(colorama.Fore.RED + f'This is not a valid path - exiting',
@@ -65,7 +66,7 @@ def duplicate(path, save_index=False):
         listing = asd.load_json_listing(path)
         directory_path = path.parent.parent
     elif path.is_dir():
-        listing, tree, forbidden = aw.walk(path, create_pbar=True)
+        listing, tree, forbidden = _walk_with_progressbar(path)
         directory_path = path
         if save_index:
             asd.save_json_index(directory_path, listing, tree, forbidden)
@@ -117,8 +118,7 @@ def missing(old_path, new_path, save_index=False):
     if old_path.is_file() and old_path.name.endswith('listing.json'):
         old_listing = asd.load_json_listing(old_path)
     elif old_path.is_dir():
-        old_listing, old_tree, old_forbidden = aw.walk(old_path,
-                                                       create_pbar=True)
+        old_listing, old_tree, old_forbidden = _walk_with_progressbar(old_path)
         old_directory_path = old_path
         if save_index:
             asd.save_json_index(old_directory_path, old_listing, old_tree,
@@ -133,8 +133,7 @@ def missing(old_path, new_path, save_index=False):
         new_listing = asd.load_json_listing(new_path)
         new_directory_path = new_path.parent.parent
     elif new_path.is_dir():
-        new_listing, new_tree, new_forbidden = aw.walk(new_path,
-                                                       create_pbar=True)
+        new_listing, new_tree, new_forbidden = _walk_with_progressbar(new_path)
         new_directory_path = new_path
         if save_index:
             asd.save_json_index(new_directory_path, new_listing, new_tree,
@@ -155,3 +154,20 @@ def missing(old_path, new_path, save_index=False):
     else:
         print(colorama.Fore.GREEN +
               f'Congratulations Old content is totally included in New')
+
+
+def _walk_with_progressbar(path):
+
+    pbar_nb_files = tqdm.tqdm(unit=' files')
+    l, t, f = aw.walk(path, exclusion=None,
+                      hash_content=False, pbar=pbar_nb_files)
+    path_size = t[path][2]
+    pbar_nb_files.close()
+
+    pbar_size = tqdm.tqdm(total=path_size, desc='indexing',
+                          unit='B', unit_scale=True, unit_divisor=1024)
+    listing, tree, forbidden = aw.walk(path, exclusion=None,
+                                       hash_content=True, pbar=pbar_size)
+    pbar_size.close()
+
+    return listing, tree, forbidden

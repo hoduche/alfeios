@@ -5,8 +5,6 @@ import pathlib
 import shutil
 import tempfile
 
-import tqdm
-
 import alfeios.tool as at
 
 
@@ -18,8 +16,7 @@ class PathType(str, enum.Enum):
     DIR = 'DIR'
 
 
-def walk(path, exclusion=None, hash_content=True,
-         create_pbar=False, pbar=None):
+def walk(path, exclusion=None, hash_content=True, pbar=None):
     """ Recursively walks through a root directory to index its content
 
     It manages three data structures:
@@ -52,20 +49,9 @@ def walk(path, exclusion=None, hash_content=True,
     tree = dict()
     forbidden = dict()
 
-    if create_pbar and hash_content:
-        l, t, f = walk(path, exclusion, hash_content=False, create_pbar=True)
-        path_size = t[path][2]
-        pbar = tqdm.tqdm(total=path_size, desc='indexing',
-                         unit='B', unit_scale=True, unit_divisor=1024)
-    elif create_pbar and not hash_content:
-        pbar = tqdm.tqdm(unit=' files')
-
     #    path = path.resolve()
     _recursive_walk(path, listing, tree, forbidden, exclusion,
-                    hash_content=hash_content, pbar=pbar)
-
-    if create_pbar:
-        pbar.close()
+                    hash_content, pbar)
 
     return listing, tree, forbidden
 
@@ -80,8 +66,7 @@ def _recursive_walk(path, listing, tree, forbidden, exclusion,
                 if each_child.name not in exclusion and\
                         not each_child.is_symlink():
                     _recursive_walk(each_child, listing, tree, forbidden,
-                                    exclusion,
-                                    hash_content=hash_content, pbar=pbar)
+                                    exclusion, hash_content, pbar)
                     if each_child not in forbidden:
                         dir_content_size += tree[each_child][2]
                         dir_content_hash_list.append(tree[each_child][0])
@@ -102,8 +87,8 @@ def _recursive_walk(path, listing, tree, forbidden, exclusion,
         try:
             # v3.7 accepts pathlib as extract_dir=
             shutil.unpack_archive(str(path), extract_dir=str(temp_dir_path))
-            zl, zt, zf = walk(temp_dir_path, hash_content=hash_content,
-                              create_pbar=False, pbar=pbar)
+            zl, zt, zf = walk(temp_dir_path, exclusion,
+                              hash_content=hash_content, pbar=pbar)
             _append_listing(listing, zl, path, temp_dir_path)
             _append_tree(tree, zt, path, temp_dir_path)
             _append_forbidden(forbidden, zf, path, temp_dir_path)
@@ -130,13 +115,17 @@ def _hash_and_index_file(path, listing, tree, hash_content, pbar):
             while len(content_stream) > 0:
                 file_hasher.update(content_stream)
                 if pbar:
+                    # pbar must implement the following interface:
+                    # set_postfix() is a nice to have
+                    # update() is mandatory
                     pbar.set_postfix(file=str(path)[-10:], refresh=False)
                     pbar.update(len(content_stream))
                 content_stream = file_content.read(BLOCK_SIZE)
         file_content_hash = file_hasher.hexdigest()
     else:
+#        if pbar:
+        pbar.update(1)  # todo the if above does not work while it should !!!
         file_content_hash = 'dummy_hash_dummy_hash_dummy_hash'
-        pbar.update()
     file_content_size = path.stat().st_size
     file_content_key = (file_content_hash, PathType.FILE, file_content_size)
     listing[file_content_key].add(path)
@@ -203,8 +192,3 @@ def _append_forbidden(forbidden, additional_forbidden, start_path, temp_path):
         relative_path_key = at.build_relative_path(path_key, temp_path)
         absolute_path_key = start_path / relative_path_key
         forbidden[absolute_path_key] = exception_value
-
-
-if __name__ == '__main__':
-    path = pathlib.Path('C:\\netBeansProjects')
-    listing, tree, forbidden = walk(path, create_pbar=True)
