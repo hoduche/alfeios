@@ -1,7 +1,6 @@
 import collections
 import enum
 import hashlib
-import os
 import pathlib
 import shutil
 import tempfile
@@ -19,25 +18,8 @@ class PathType(str, enum.Enum):
     DIR = 'DIR'
 
 
-def compute_size(path, create_pbar=False):
-    if create_pbar:
-        pbar = tqdm.tqdm(unit=' files')
-    nb_files = 0
-    total_size = 0
-    for dir_path_string, subdir_names, file_names in os.walk(path):
-        for file_name in file_names:
-            file_path = pathlib.Path(dir_path_string) / file_name
-            file_size = file_path.stat().st_size
-            nb_files += 1
-            total_size += file_size
-            if create_pbar:
-                pbar.update()
-    if create_pbar:
-        pbar.close()
-    return nb_files, total_size
-
-
-def walk(path, exclusion=None, create_pbar=False):
+def walk(path, exclusion=None, hash_content=True,
+         create_pbar=False, pbar=None):
     """ Recursively walks through a root directory to index its content
 
     It manages three data structures:
@@ -70,22 +52,26 @@ def walk(path, exclusion=None, create_pbar=False):
     tree = dict()
     forbidden = dict()
 
-    nb_files, total_size = compute_size(path, create_pbar)
-
-#    path = path.resolve()
-    if create_pbar:
-        pbar = tqdm.tqdm(total=2*total_size, desc='indexing',
+    if create_pbar and hash_content:
+        l, t, f = walk(path, exclusion, hash_content=False, create_pbar=True)
+        path_size = t[path][2]
+        pbar = tqdm.tqdm(total=path_size, desc='indexing',
                          unit='B', unit_scale=True, unit_divisor=1024)
-    else:
-        pbar = None
-    _recursive_walk(path, listing, tree, forbidden, exclusion, pbar)
+    elif create_pbar and not hash_content:
+        pbar = tqdm.tqdm(unit=' files')
+
+    #    path = path.resolve()
+    _recursive_walk(path, listing, tree, forbidden, exclusion,
+                    hash_content=hash_content, pbar=pbar)
+
     if create_pbar:
         pbar.close()
 
     return listing, tree, forbidden
 
 
-def _recursive_walk(path, listing, tree, forbidden, exclusion, pbar):
+def _recursive_walk(path, listing, tree, forbidden, exclusion,
+                    hash_content, pbar):
     if path.is_dir():
         dir_content_size = 0
         dir_content_hash_list = []
@@ -94,14 +80,18 @@ def _recursive_walk(path, listing, tree, forbidden, exclusion, pbar):
                 if each_child.name not in exclusion and\
                         not each_child.is_symlink():
                     _recursive_walk(each_child, listing, tree, forbidden,
-                                    exclusion, pbar)
+                                    exclusion,
+                                    hash_content=hash_content, pbar=pbar)
                     if each_child not in forbidden:
                         dir_content_size += tree[each_child][2]
                         dir_content_hash_list.append(tree[each_child][0])
             except (PermissionError, Exception) as e:
                 forbidden[each_child] = type(e)
-        dir_content = '\n'.join(sorted(dir_content_hash_list))
-        dir_content_hash = hashlib.md5(dir_content.encode()).hexdigest()
+        if hash_content:
+            dir_content = '\n'.join(sorted(dir_content_hash_list))
+            dir_content_hash = hashlib.md5(dir_content.encode()).hexdigest()
+        else:
+            dir_content_hash = 'dummy_hash_dummy_hash_dummy_hash'
         dir_content_key = (dir_content_hash, PathType.DIR, dir_content_size)
         listing[dir_content_key].add(path)
         tree[path] = dir_content_key
@@ -112,35 +102,41 @@ def _recursive_walk(path, listing, tree, forbidden, exclusion, pbar):
         try:
             # v3.7 accepts pathlib as extract_dir=
             shutil.unpack_archive(str(path), extract_dir=str(temp_dir_path))
-            zip_listing, zip_tree, zip_forbidden = walk(temp_dir_path,
-                                                        create_pbar=False)
-            _append_listing(listing, zip_listing, path, temp_dir_path)
-            _append_tree(tree, zip_tree, path, temp_dir_path)
-            _append_forbidden(forbidden, zip_forbidden, path, temp_dir_path)
+            zl, zt, zf = walk(temp_dir_path, hash_content=hash_content,
+                              create_pbar=False, pbar=pbar)
+            _append_listing(listing, zl, path, temp_dir_path)
+            _append_tree(tree, zt, path, temp_dir_path)
+            _append_forbidden(forbidden, zf, path, temp_dir_path)
         except (shutil.ReadError, OSError, Exception) as e:
             forbidden[path] = type(e)
-            _hash_and_index_file(path, listing, tree, pbar)
+            _hash_and_index_file(path, listing, tree,
+                                 hash_content=hash_content, pbar=pbar)
         finally:
             shutil.rmtree(temp_dir_path)
 
     elif path.is_file():
-        _hash_and_index_file(path, listing, tree, pbar)
+        _hash_and_index_file(path, listing, tree,
+                             hash_content=hash_content, pbar=pbar)
 
     else:
         forbidden[path] = Exception
 
 
-def _hash_and_index_file(path, listing, tree, pbar):
-    file_hasher = hashlib.md5()
-    with path.open(mode='rb') as file_content:
-        content_stream = file_content.read(BLOCK_SIZE)
-        while len(content_stream) > 0:
-            file_hasher.update(content_stream)
+def _hash_and_index_file(path, listing, tree, hash_content, pbar):
+    if hash_content:
+        file_hasher = hashlib.md5()
+        with path.open(mode='rb') as file_content:
             content_stream = file_content.read(BLOCK_SIZE)
-            if pbar:
-                pbar.set_postfix(file=str(path)[-10:], refresh=False)
-                pbar.update(BLOCK_SIZE)
-    file_content_hash = file_hasher.hexdigest()
+            while len(content_stream) > 0:
+                file_hasher.update(content_stream)
+                if pbar:
+                    pbar.set_postfix(file=str(path)[-10:], refresh=False)
+                    pbar.update(len(content_stream))
+                content_stream = file_content.read(BLOCK_SIZE)
+        file_content_hash = file_hasher.hexdigest()
+    else:
+        file_content_hash = 'dummy_hash_dummy_hash_dummy_hash'
+        pbar.update()
     file_content_size = path.stat().st_size
     file_content_key = (file_content_hash, PathType.FILE, file_content_size)
     listing[file_content_key].add(path)

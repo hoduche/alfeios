@@ -63,7 +63,7 @@ def duplicate(path, save_index=False):
     path = pathlib.Path(path)
     if path.is_file() and path.name.endswith('listing.json'):
         listing = asd.load_json_listing(path)
-        directory_path = path.parent
+        directory_path = path.parent.parent
     elif path.is_dir():
         listing, tree, forbidden = aw.walk(path, create_pbar=True)
         directory_path = path
@@ -131,7 +131,7 @@ def missing(old_path, new_path, save_index=False):
     new_path = pathlib.Path(new_path)
     if new_path.is_file() and new_path.name.endswith('listing.json'):
         new_listing = asd.load_json_listing(new_path)
-        new_directory_path = new_path.parent
+        new_directory_path = new_path.parent.parent
     elif new_path.is_dir():
         new_listing, new_tree, new_forbidden = aw.walk(new_path,
                                                        create_pbar=True)
