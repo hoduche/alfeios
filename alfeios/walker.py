@@ -40,7 +40,7 @@ def walk(path, exclusion=None, hash_content=True, pbar=None):
         forbidden : dict = {pathlib.Path: Exception}
     """
 
-    if not exclusion:
+    if exclusion is None:
         exclusion = set()
     exclusion.add('.alfeios')
     exclusion.add('.alfeios_expected')
@@ -114,7 +114,7 @@ def _hash_and_index_file(path, listing, tree, hash_content, pbar):
             content_stream = file_content.read(BLOCK_SIZE)
             while len(content_stream) > 0:
                 file_hasher.update(content_stream)
-                if pbar:
+                if pbar is not None:
                     # pbar must implement the following interface:
                     # set_postfix() is a nice to have
                     # update() is mandatory
@@ -123,8 +123,8 @@ def _hash_and_index_file(path, listing, tree, hash_content, pbar):
                 content_stream = file_content.read(BLOCK_SIZE)
         file_content_hash = file_hasher.hexdigest()
     else:
-#        if pbar:
-        pbar.update(1)  # todo the if above does not work while it should !!!
+        if pbar is not None:
+            pbar.update(1)
         file_content_hash = 'dummy_hash_dummy_hash_dummy_hash'
     file_content_size = path.stat().st_size
     file_content_key = (file_content_hash, PathType.FILE, file_content_size)

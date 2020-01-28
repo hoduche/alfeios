@@ -41,9 +41,9 @@ def save_json_index(dir_path, listing, tree=None, forbidden=None,
     tag = datetime.datetime.now().strftime('%Y_%m_%d_%H_%M_%S_') + prefix
 
     _save_json_listing(listing, path / (tag + 'listing.json'), start_path)
-    if tree:
+    if tree is not None:
         _save_json_tree(tree, path / (tag + 'tree.json'), start_path)
-    if forbidden:
+    if forbidden is not None:
         _save_json_forbidden(forbidden, path / (tag + 'forbidden.json'),
                              start_path)
 
@@ -67,7 +67,7 @@ def load_json_listing(file_path, start_path=None):
     dict_listing = {ast.literal_eval(tuple_key): {pathlib.Path(path)
                                                   for path in path_list}
                     for tuple_key, path_list in serializable_listing.items()}
-    if start_path:
+    if start_path is not None:
         dict_listing = {tuple_key: {start_path / path for path in path_list}
                         for tuple_key, path_list in dict_listing.items()}
     listing = collections.defaultdict(set, dict_listing)
@@ -90,14 +90,14 @@ def load_json_tree(file_path, start_path=None):
     serializable_tree = json.loads(json_tree)
     tree = {pathlib.Path(path_key): tuple(value)
             for path_key, value in serializable_tree.items()}
-    if start_path:
+    if start_path is not None:
         tree = {start_path / path_key: tuple_value
                 for path_key, tuple_value in tree.items()}
     return tree
 
 
 def _save_json_listing(listing, file_path, start_path=None):
-    if start_path:
+    if start_path is not None:
         listing = {tuple_key: {at.build_relative_path(path, start_path)
                                for path in path_set}
                    for tuple_key, path_set in listing.items()}
@@ -110,7 +110,7 @@ def _save_json_listing(listing, file_path, start_path=None):
 
 
 def _save_json_tree(tree, file_path, start_path=None):
-    if start_path:
+    if start_path is not None:
         tree = {at.build_relative_path(path_key, start_path): tuple_value
                 for path_key, tuple_value in tree.items()}
     serializable_tree = {str(pathlib.PurePosixPath(path_key)): tuple_value
@@ -120,7 +120,7 @@ def _save_json_tree(tree, file_path, start_path=None):
 
 
 def _save_json_forbidden(forbidden, file_path, start_path=None):
-    if start_path:
+    if start_path is not None:
         forbidden = {at.build_relative_path(path_key, start_path): exception
                      for path_key, exception in forbidden.items()}
     serializable_forbidden = {str(pathlib.PurePosixPath(path_key)): str(excep)
