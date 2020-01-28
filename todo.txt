@@ -1,6 +1,5 @@
  * do the whole HO use case with several old and several new root directories
    probably use ';' to separate multiple new root directories
- * use tqdm to display a progress bar
  * by default display a progress bar + write info,
    -q --quiet displays nothing vs -v --verbose ?
  * resolve path to be absolute everywhere -> tests break

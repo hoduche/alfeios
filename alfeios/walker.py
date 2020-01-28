@@ -8,7 +8,7 @@ import tempfile
 import alfeios.tool as at
 
 
-BLOCK_SIZE = 65536  # ie 64 Ko
+BLOCK_SIZE = 65536  # ie 64 KiB
 
 
 class PathType(str, enum.Enum):
@@ -32,6 +32,10 @@ def walk(path, exclusion=None, hash_content=True, pbar=None):
     Args:
         path (pathlib.Path): path to the root directory to parse
         exclusion (set of str): set of directories and files not to parse
+        hash_content (bool): flag to hash content or not
+        pbar (object): progress bar that must implement the interface:
+                        * update()       - mandatory
+                        * set_postfix()  - nice to have
 
     Returns:
         listing   : collections.defaultdict(set) =
@@ -115,15 +119,13 @@ def _hash_and_index_file(path, listing, tree, hash_content, pbar):
             while len(content_stream) > 0:
                 file_hasher.update(content_stream)
                 if pbar is not None:
-                    # pbar must implement the following interface:
-                    # set_postfix() is a nice to have
-                    # update() is mandatory
                     pbar.set_postfix(file=str(path)[-10:], refresh=False)
                     pbar.update(len(content_stream))
                 content_stream = file_content.read(BLOCK_SIZE)
         file_content_hash = file_hasher.hexdigest()
     else:
         if pbar is not None:
+            pbar.set_postfix(file=str(path)[-10:], refresh=False)
             pbar.update(1)
         file_content_hash = 'dummy_hash_dummy_hash_dummy_hash'
     file_content_size = path.stat().st_size

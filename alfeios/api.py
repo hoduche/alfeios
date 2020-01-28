@@ -158,13 +158,14 @@ def missing(old_path, new_path, save_index=False):
 
 def _walk_with_progressbar(path):
 
-    pbar_nb_files = tqdm.tqdm(unit=' files')
+    pbar_nb_files = tqdm.tqdm(total=1, desc='Exploring',
+                              unit=' files', unit_scale=False)
     l, t, f = aw.walk(path, exclusion=None,
                       hash_content=False, pbar=pbar_nb_files)
     path_size = t[path][2]
     pbar_nb_files.close()
 
-    pbar_size = tqdm.tqdm(total=path_size, desc='indexing',
+    pbar_size = tqdm.tqdm(total=path_size, desc='Indexing ',
                           unit='B', unit_scale=True, unit_divisor=1024)
     listing, tree, forbidden = aw.walk(path, exclusion=None,
                                        hash_content=True, pbar=pbar_size)
