@@ -37,7 +37,8 @@ def main():
         help='Index content of a root directory',
         epilog='''example:
   alfeios index
-  alfeios index D:/Pictures
+  alfeios idx D:/Pictures
+  alfeios i
 ''',
         formatter_class=dsargparse.RawTextHelpFormatter
     )
@@ -55,8 +56,8 @@ def main():
         help='Find duplicate content in a root directory',
         epilog='''example:
   alfeios duplicate
-  alfeios duplicate -s D:/Pictures
-  alfeios duplicate D:/Pictures/listing.json
+  alfeios dup -s D:/Pictures
+  alfeios d D:/Pictures/.alfeios/2020_01_29_10_29_39_listing.json
 ''',
         formatter_class=dsargparse.RawTextHelpFormatter
     )
@@ -80,8 +81,8 @@ def main():
              ' directory',
         epilog='''examples:
   alfeios missing D:/Pictures E:/AllPictures
-  alfeios missing -s D:/Pictures E:/AllPictures
-  alfeios missing D:/Pictures/listing.json E:/AllPictures/listing.json
+  alfeios mis -s D:/Pictures E:/AllPictures
+  alfeios m D:/Pictures/.alfeios/2020_01_29_10_29_39_listing.json E:/AllPics
 ''',
         formatter_class=dsargparse.RawTextHelpFormatter
     )

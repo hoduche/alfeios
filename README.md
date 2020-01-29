@@ -54,7 +54,8 @@ Index content of a root directory:
   including the inside of zip, tar, gztar, bztar and xztar compressed files
 - Contents are identified by their hash-code, type (file or directory) and
   size
-- It saves three files in the root directory:
+- It saves three files tagged with the current time in a .alfeios folder 
+in the root directory:
     - A listing.json file that is a dictionary: content -> list of paths
     - A tree.json.file that is a dictionary: path -> content
       (the listing.json dual)
@@ -63,8 +64,11 @@ Index content of a root directory:
 Example:
 ```
 alfeios index
-alfeios index D:/Pictures
+alfeios idx D:/Pictures
+alfeios i
 ```
+
+`alfeios idx` and `alfeios i` can be used as aliases for `alfeios index`
 
 If no positional argument is passed, the root directory is 
 defaulted to the current working directory.
@@ -73,21 +77,25 @@ defaulted to the current working directory.
 Find duplicate content in a root directory:
 
 - List all duplicated files and directories in a root directory
-- Save result as a duplicate_listing.json file in the root directory
+- Save result as a duplicate_listing.json file tagged with the current time
+ in a .alfeios folder in the root directory
 - Print the potential space gain
 
 Example:
 ```
 alfeios duplicate
-alfeios duplicate -s D:/Pictures
-alfeios duplicate D:/Pictures/listing.json
+alfeios dup -s D:/Pictures
+alfeios d D:/Pictures/.alfeios/2020_01_29_10_29_39_listing.json
 ```
+
+`alfeios dup` and `alfeios d` can be used as aliases for `alfeios duplicate`
 
 If no positional argument is passed, the root directory is 
 defaulted to the current working directory.
 
 The '-s' or '--save-index' optional flag saves the listing.json,
-tree.json and forbidden.json files in the root directory.
+tree.json and forbidden.json files tagged with the current time in 
+a .alfeios folder in the root directory.
 
 If a listing.json file is passed as positional argument instead of a root
 directory, the listing is deserialized from the json file
@@ -99,18 +107,22 @@ Find missing content in a new root directory from an old root directory:
 
 - List all files and directories that are present in an old root directory
   and that are missing in a new one
-- Save result as a missing_listing.json file in the new root directory
+- Save result as a missing_listing.json file tagged with the current time 
+in a .alfeios folder in the new root directory
 - Print the number of missing files
 
 Example:
 ```
 alfeios missing D:/Pictures E:/AllPictures
-alfeios missing -s D:/Pictures E:/AllPictures
-alfeios missing D:/Pictures/listing.json E:/AllPictures/listing.json
+alfeios mis -s D:/Pictures E:/AllPictures
+alfeios m D:/Pictures/.alfeios/2020_01_29_10_29_39_listing.json E:/AllPics
 ```
 
+`alfeios mis` and `alfeios m` can be used as aliases for `alfeios missing`
+
 The '-s' or '--save-index' optional flag saves the listing.json,
-tree.json and forbidden.json files in the 2 root directories.
+tree.json and forbidden.json files tagged with the current time in 
+a .alfeios folder in the 2 root directories.
 
 If a listing.json file is passed as positional argument instead of a root
 directory, the corresponding listing is deserialized from the json file
