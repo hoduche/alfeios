@@ -3,7 +3,7 @@
 import pathlib
 import re
 
-from setuptools import setup, find_packages
+import setuptools
 
 project_path = pathlib.Path(__file__).parent
 
@@ -32,7 +32,7 @@ def find_version():
             return result
 
 
-setup(
+setuptools.setup(
     name='alfeios',
     version=find_version(),
     description='Enrich your command-line shell with Herculean cleaning'
@@ -40,13 +40,12 @@ setup(
     long_description=find_readme(),
     long_description_content_type='text/markdown',
     url='https://github.com/hoduche/alfeios',
-    download_url='https://github.com/hoduche/alfeios/archive/v0.0.1.tar.gz',
     author='Henri-Olivier Duché',
     author_email='hoduche@yahoo.fr',
     license='MIT',
     keywords='fs filesystem file system walk crawl files duplicate missing'
              ' content hash hashcode checksum zip',
-    packages=find_packages(),
+    packages=setuptools.find_packages(),
     include_package_data=True,
     install_requires=find_requirements(),
     python_requires='>=3.6',

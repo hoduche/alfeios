@@ -2,3 +2,4 @@ colorama
 dsargparse
 pytest
 tqdm
+flake8
