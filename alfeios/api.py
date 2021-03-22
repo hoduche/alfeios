@@ -9,7 +9,7 @@ import alfeios.walker as aw
 import alfeios.tool as at
 
 
-def index(path):
+def index(path, exclusion=None):
     """
 
     - Index all file and directory contents in a root directory
@@ -26,11 +26,13 @@ def index(path):
 
     Args:
         path (str or pathlib.Path): path to the root directory
+        exclusion (set of str): set of directories and files not to consider
     """
 
     path = pathlib.Path(path)
     if path.is_dir():
-        listing, tree, forbidden = _walk_with_progressbar(path)
+        listing, tree, forbidden = _walk_with_progressbar(path,
+                                                          exclusion=exclusion)
         asd.save_json_index(path, listing, tree, forbidden)
     else:
         print(colorama.Fore.RED + f'This is not a valid path - exiting',
@@ -38,7 +40,7 @@ def index(path):
         return
 
 
-def duplicate(path, save_index=False):
+def duplicate(path, exclusion=None, save_index=False):
     """
 
     - List all duplicated files and directories in a root directory
@@ -56,6 +58,7 @@ def duplicate(path, save_index=False):
     Args:
         path (str or pathlib.Path): path to the root directory to parse or the
                                     listing.json file to deserialize
+        exclusion (set of str): set of directories and files not to consider
         save_index (bool): flag to save the listing.json, tree.json and
                            forbidden.json files in the root directory
                            default is False
@@ -66,7 +69,8 @@ def duplicate(path, save_index=False):
         listing = asd.load_json_listing(path)
         directory_path = path.parent.parent
     elif path.is_dir():
-        listing, tree, forbidden = _walk_with_progressbar(path)
+        listing, tree, forbidden = _walk_with_progressbar(path,
+                                                          exclusion=exclusion)
         directory_path = path
         if save_index:
             asd.save_json_index(directory_path, listing, tree, forbidden)
@@ -88,7 +92,7 @@ def duplicate(path, save_index=False):
               f'Congratulations there is no duplicate here')
 
 
-def missing(old_path, new_path, save_index=False):
+def missing(old_path, new_path, exclusion=None, save_index=False):
     """
 
     - List all files and directories that are present in an old root directory
@@ -109,6 +113,7 @@ def missing(old_path, new_path, save_index=False):
                                         or the listing.json file to deserialize
         new_path (str or pathlib.Path): path to the new root directory to parse
                                         or the listing.json file to deserialize
+        exclusion (set of str): set of directories and files not to consider
         save_index (bool): flag to save the listing.json, tree.json
                            and forbidden.json files in the 2 root directories
                            default is False
@@ -118,7 +123,8 @@ def missing(old_path, new_path, save_index=False):
     if old_path.is_file() and old_path.name.endswith('listing.json'):
         old_listing = asd.load_json_listing(old_path)
     elif old_path.is_dir():
-        old_listing, old_tree, old_forbidden = _walk_with_progressbar(old_path)
+        old_listing, old_tree, old_forbidden = _walk_with_progressbar(
+            old_path, exclusion=exclusion)
         old_directory_path = old_path
         if save_index:
             asd.save_json_index(old_directory_path, old_listing, old_tree,
@@ -133,7 +139,8 @@ def missing(old_path, new_path, save_index=False):
         new_listing = asd.load_json_listing(new_path)
         new_directory_path = new_path.parent.parent
     elif new_path.is_dir():
-        new_listing, new_tree, new_forbidden = _walk_with_progressbar(new_path)
+        new_listing, new_tree, new_forbidden = _walk_with_progressbar(
+            new_path, exclusion=exclusion)
         new_directory_path = new_path
         if save_index:
             asd.save_json_index(new_directory_path, new_listing, new_tree,
@@ -156,18 +163,18 @@ def missing(old_path, new_path, save_index=False):
               f'Congratulations Old content is totally included in New')
 
 
-def _walk_with_progressbar(path):
+def _walk_with_progressbar(path, exclusion=None):
 
     pbar_nb_files = tqdm.tqdm(total=1, desc='Exploring',
                               unit=' files', unit_scale=False)
-    l, t, f = aw.walk(path, exclusion=None,
+    l, t, f = aw.walk(path, exclusion=exclusion,
                       hash_content=False, pbar=pbar_nb_files)
     path_size = t[path][2]
     pbar_nb_files.close()
 
     pbar_size = tqdm.tqdm(total=path_size, desc='Indexing ',
                           unit='B', unit_scale=True, unit_divisor=1024)
-    listing, tree, forbidden = aw.walk(path, exclusion=None,
+    listing, tree, forbidden = aw.walk(path, exclusion=exclusion,
                                        hash_content=True, pbar=pbar_size)
     pbar_size.close()
 
