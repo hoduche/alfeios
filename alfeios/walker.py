@@ -1,5 +1,4 @@
 import collections
-import enum
 import hashlib
 import pathlib
 import shutil
@@ -8,46 +7,41 @@ import tempfile
 import alfeios.tool as at
 
 
-BLOCK_SIZE = 65536  # ie 64 KiB
-
-
-class PathType(str, enum.Enum):
-    FILE = 'FILE'
-    DIR = 'DIR'
-
-
-def walk(path, exclusion=None, hash_content=True, pbar=None):
+def walk(path, exclusion=None, should_hash=True, pbar=None):
     """ Recursively walks through a root directory to index its content
 
     It manages three data structures:
     - listing   : the most important one: a collections.defaultdict(set) whose
                   keys are 3-tuples (hash-code, path-type, size) and values are
-                  list of pathlib.Path
-    - tree      : the listing dual: a dictionary whose keys are pathlib.Path
-                  and values are 3-tuples (hash-code, path-type, size)
+                  set of 2-tuples (pathlib.Path, modification-time)
+    - tree      : the listing dual: a dictionary whose keys are
+                  2-tuples (pathlib.Path, modification-time) and values are
+                  3-tuples (hash-code, path-type, size)
     - forbidden : the no-access list: a dictionary whose keys are pathlib.Path
                   and values are Exceptions
     in listing and tree, the path-type distinguishes files from directories
+    size are expressed in bytes
+    modification-time are expressed in nanoseconds
+    since the Unix epoch 00:00:00 UTC on 1 January 1970
 
     Args:
         path (pathlib.Path): path to the root directory to parse
         exclusion (set of str): set of directories and files not to parse
-        hash_content (bool): flag to hash content or not
+        should_hash (bool): flag to hash content or not
         pbar (object): progress bar that must implement the interface:
                         * update()       - mandatory
                         * set_postfix()  - nice to have
 
     Returns:
         listing   : collections.defaultdict(set) =
-                    {(hash-code, path-type, int): {pathlib.Path}}
-        tree      : dict = {pathlib.Path: (hash-code, path-type, int)}
+                    {(hash-code, path-type, int): {(pathlib.Path, int)}}
+        tree      : dict = {(pathlib.Path, int): (hash-code, path-type, int)}
         forbidden : dict = {pathlib.Path: Exception}
     """
 
     if exclusion is None:
         exclusion = set()
-    exclusion.add('.alfeios')
-    exclusion.add('.alfeios_expected')
+    exclusion.update(['.alfeios', '.alfeios_expected'])
 
     listing = collections.defaultdict(set)
     tree = dict()
@@ -55,35 +49,41 @@ def walk(path, exclusion=None, hash_content=True, pbar=None):
 
     #    path = path.resolve()
     _recursive_walk(path, listing, tree, forbidden, exclusion,
-                    hash_content, pbar)
+                    should_hash, pbar)
 
     return listing, tree, forbidden
 
 
 def _recursive_walk(path, listing, tree, forbidden, exclusion,
-                    hash_content, pbar):
+                    should_hash, pbar):
     if path.is_dir():
-        dir_content_size = 0
-        dir_content_hash_list = []
-        for each_child in path.iterdir():
+        dir_size = 0
+        dir_hashes = []
+        for child in path.iterdir():
             try:
-                if each_child.name not in exclusion and\
-                        not each_child.is_symlink():
-                    _recursive_walk(each_child, listing, tree, forbidden,
-                                    exclusion, hash_content, pbar)
-                    if each_child not in forbidden:
-                        dir_content_size += tree[each_child][2]
-                        dir_content_hash_list.append(tree[each_child][0])
+                if child.name not in exclusion and not child.is_symlink():
+                    _recursive_walk(child, listing, tree, forbidden,
+                                    exclusion, should_hash, pbar)
+                    if child not in forbidden:
+                        # by construction of the recursion
+                        # tree is guaranteed to contain child in its keys
+                        # however zip file mtime is modified during the walk
+                        child_content = [content for pointer, content
+                                         in tree.items()
+                                         if pointer[at.PATH] == child][0]
+                        dir_size += child_content[at.SIZE]
+                        dir_hashes.append(child_content[at.HASH])
             except (PermissionError, Exception) as e:
-                forbidden[each_child] = type(e)
-        if hash_content:
-            dir_content = '\n'.join(sorted(dir_content_hash_list))
-            dir_content_hash = hashlib.md5(dir_content.encode()).hexdigest()
+                forbidden[child] = type(e)
+        if should_hash:
+            concat_hashes = '\n'.join(sorted(dir_hashes))
+            dir_hash_code = hashlib.md5(concat_hashes.encode()).hexdigest()
         else:
-            dir_content_hash = 'dummy_hash_dummy_hash_dummy_hash'
-        dir_content_key = (dir_content_hash, PathType.DIR, dir_content_size)
-        listing[dir_content_key].add(path)
-        tree[path] = dir_content_key
+            dir_hash_code = ''
+        dir_content = (dir_hash_code, at.PathType.DIR, dir_size)
+        dir_pointer = (path, path.stat().st_mtime_ns)
+        listing[dir_content].add(dir_pointer)
+        tree[dir_pointer] = dir_content
 
     elif path.is_file() and path.suffix in ['.zip', '.tar', '.gztar', '.bztar',
                                             '.xztar']:
@@ -91,28 +91,33 @@ def _recursive_walk(path, listing, tree, forbidden, exclusion,
         try:
             # v3.7 accepts pathlib as extract_dir=
             shutil.unpack_archive(str(path), extract_dir=str(temp_dir_path))
+            # calls the recursion one step above to create separate output
+            # that will be merged afterwards
             zl, zt, zf = walk(temp_dir_path, exclusion,
-                              hash_content=hash_content, pbar=pbar)
+                              should_hash=should_hash, pbar=pbar)
             _append_listing(listing, zl, path, temp_dir_path)
             _append_tree(tree, zt, path, temp_dir_path)
             _append_forbidden(forbidden, zf, path, temp_dir_path)
         except (shutil.ReadError, OSError, Exception) as e:
             forbidden[path] = type(e)
             _hash_and_index_file(path, listing, tree,
-                                 hash_content=hash_content, pbar=pbar)
+                                 should_hash=should_hash, pbar=pbar)
         finally:
             shutil.rmtree(temp_dir_path)
 
     elif path.is_file():
         _hash_and_index_file(path, listing, tree,
-                             hash_content=hash_content, pbar=pbar)
+                             should_hash=should_hash, pbar=pbar)
 
     else:
         forbidden[path] = Exception
 
 
-def _hash_and_index_file(path, listing, tree, hash_content, pbar):
-    if hash_content:
+BLOCK_SIZE = 65536  # ie 64 KiB
+
+
+def _hash_and_index_file(path, listing, tree, should_hash, pbar):
+    if should_hash:
         file_hasher = hashlib.md5()
         with path.open(mode='rb') as file_content:
             content_stream = file_content.read(BLOCK_SIZE)
@@ -122,75 +127,97 @@ def _hash_and_index_file(path, listing, tree, hash_content, pbar):
                     pbar.set_postfix(file=str(path)[-10:], refresh=False)
                     pbar.update(len(content_stream))
                 content_stream = file_content.read(BLOCK_SIZE)
-        file_content_hash = file_hasher.hexdigest()
+        hash_code = file_hasher.hexdigest()
     else:
         if pbar is not None:
             pbar.set_postfix(file=str(path)[-10:], refresh=False)
             pbar.update(1)
-        file_content_hash = 'dummy_hash_dummy_hash_dummy_hash'
-    file_content_size = path.stat().st_size
-    file_content_key = (file_content_hash, PathType.FILE, file_content_size)
-    listing[file_content_key].add(path)
-    tree[path] = file_content_key
+        hash_code = ''
+    size = path.stat().st_size
+    mtime = path.stat().st_mtime_ns
+    content = (hash_code, at.PathType.FILE, size)
+    pointer = (path, mtime)
+    listing[content].add(pointer)
+    tree[pointer] = content
 
 
 def get_duplicate(listing):
-    duplicate = {k: v for k, v in listing.items() if len(v) >= 2}
-    size_gain = sum([k[2] * (len(v) - 1) for k, v in duplicate.items()])
-    duplicate_sorted_by_size = {k: v for (k, v)
+    duplicate = {content: pointers for content, pointers in listing.items()
+                 if len(pointers) >= 2}
+    size_gain = sum([content[at.SIZE] * (len(pointers) - 1)
+                     for content, pointers in duplicate.items()])
+    duplicate_sorted_by_size = {content: pointers for (content, pointers)
                                 in sorted(duplicate.items(),
-                                          key=lambda i: i[0][2],
+                                          key=lambda item: item[0][at.SIZE],
                                           reverse=True)}
     result = collections.defaultdict(set, duplicate_sorted_by_size)
     return result, size_gain
 
 
 def get_missing(old_listing, new_listing):
-    non_included = {k: v for k, v in old_listing.items()
-                    if (k not in new_listing and k[1] == PathType.FILE)}
+    non_included = {content: pointers for content, pointers
+                    in old_listing.items() if content not in new_listing}
     result = collections.defaultdict(set, non_included)
     return result
 
 
 def unify(listings, trees, forbiddens):
-    tree = dict()  # = {pathlib.Path: (hash-code, path-type, int)}
-    for each_tree in trees:
-        for k, v in each_tree.items():
-            if (k not in tree) or (tree[k][2] < v[2]):
-                tree[k] = v
+    # {(pathlib.Path, int): (hash-code, path-type, int)}
+    unified_tree = dict()
+    for tree in trees:
+        for pointer, content in tree.items():
+            if (pointer not in unified_tree) or \
+                    (unified_tree[pointer][at.SIZE] < content[at.SIZE]):
+                unified_tree[pointer] = content
 
-    listing = collections.defaultdict(set)
-    # = {(hash-code, path-type, int): {pathlib.Path}}
+    # {(hash-code, path-type, int): {(pathlib.Path, int)}}
+    unified_listing = collections.defaultdict(set)
     for each_listing in listings:
-        for k, v in each_listing.items():
-            for each_v in v:
-                if tree[each_v] == k:
-                    listing[k].add(each_v)
+        for content, pointers in each_listing.items():
+            for pointer in pointers:
+                if unified_tree[pointer] == content:
+                    unified_listing[content].add(pointer)
 
-    forbidden = dict()  # = {pathlib.Path: Exception}
+    # {pathlib.Path: Exception}
+    forbidden = dict()
     for each_forbidden in forbiddens:
         forbidden.update(each_forbidden)
 
-    return listing, tree, forbidden
+    return unified_listing, unified_tree, forbidden
+
+
+def tree_to_listing(tree):
+    listing = collections.defaultdict(set)
+    for pointer, content in tree.items():
+        listing[content].add(pointer)
+    return listing
+
+
+def listing_to_tree(listing):
+    tree = dict()
+    for content, pointers in listing.items():
+        for pointer in pointers:
+            tree[pointer] = content
+    return tree
 
 
 def _append_listing(listing, additional_listing, start_path, temp_path):
-    for tuple_key, path_set in additional_listing.items():
-        for each_path in path_set:
-            each_relative_path = at.build_relative_path(each_path, temp_path)
-            each_absolute_path = start_path / each_relative_path
-            listing[tuple_key].add(each_absolute_path)
+    for content, pointer_set in additional_listing.items():
+        for pointer in pointer_set:
+            relative_path = at.build_relative_path(pointer[at.PATH], temp_path)
+            absolute_path = start_path / relative_path
+            listing[content].add((absolute_path, pointer[at.MTIME]))
 
 
 def _append_tree(tree, additional_tree, start_path, temp_path):
-    for path_key, tuple_value in additional_tree.items():
-        relative_path_key = at.build_relative_path(path_key, temp_path)
-        absolute_path_key = start_path / relative_path_key
-        tree[absolute_path_key] = tuple_value
+    for pointer, content in additional_tree.items():
+        relative_path = at.build_relative_path(pointer[at.PATH], temp_path)
+        absolute_path = start_path / relative_path
+        tree[(absolute_path, pointer[at.MTIME])] = content
 
 
 def _append_forbidden(forbidden, additional_forbidden, start_path, temp_path):
-    for path_key, exception_value in additional_forbidden:
-        relative_path_key = at.build_relative_path(path_key, temp_path)
-        absolute_path_key = start_path / relative_path_key
-        forbidden[absolute_path_key] = exception_value
+    for path, exception_value in additional_forbidden:
+        relative_path = at.build_relative_path(path, temp_path)
+        absolute_path = start_path / relative_path
+        forbidden[absolute_path] = exception_value

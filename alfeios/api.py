@@ -125,7 +125,7 @@ def missing(old_path, new_path, exclusion=None, save_index=False):
     elif old_path.is_dir():
         old_listing, old_tree, old_forbidden = _walk_with_progressbar(
             old_path, exclusion=exclusion)
-        old_directory_path = old_path
+        old_directory_path = old_path  # todo understand if necessary ?
         if save_index:
             asd.save_json_index(old_directory_path, old_listing, old_tree,
                                 old_forbidden)
@@ -168,14 +168,14 @@ def _walk_with_progressbar(path, exclusion=None):
     pbar_nb_files = tqdm.tqdm(total=1, desc='Exploring',
                               unit=' files', unit_scale=False)
     l, t, f = aw.walk(path, exclusion=exclusion,
-                      hash_content=False, pbar=pbar_nb_files)
+                      should_hash=False, pbar=pbar_nb_files)
     path_size = t[path][2]
     pbar_nb_files.close()
 
     pbar_size = tqdm.tqdm(total=path_size, desc='Indexing ',
                           unit='B', unit_scale=True, unit_divisor=1024)
     listing, tree, forbidden = aw.walk(path, exclusion=exclusion,
-                                       hash_content=True, pbar=pbar_size)
+                                       should_hash=True, pbar=pbar_size)
     pbar_size.close()
 
     return listing, tree, forbidden
