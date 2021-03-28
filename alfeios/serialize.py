@@ -74,16 +74,14 @@ def load_json_listing(file_path, start_path=None):
     # we then cast the text elements into their expected types
     dict_listing = {(content[at.HASH],
                      at.PathType(content[at.TYPE]),
-                     content[at.SIZE]):
-                        {(pathlib.Path(pointer[at.PATH]),
-                          pointer[at.MTIME])
-                         for pointer in pointers}
+                     content[at.SIZE]): {(pathlib.Path(pointer[at.PATH]),
+                                          pointer[at.MTIME])
+                                         for pointer in pointers}
                     for content, pointers in dict_listing.items()}
     if start_path is not None:
-        dict_listing = {content:
-                            {(start_path / pointer[at.PATH],
-                              pointer[at.MTIME])
-                             for pointer in pointers}
+        dict_listing = {content: {(start_path / pointer[at.PATH],
+                                   pointer[at.MTIME])
+                                  for pointer in pointers}
                         for content, pointers in dict_listing.items()}
     listing = collections.defaultdict(set, dict_listing)
     return listing
@@ -108,15 +106,13 @@ def load_json_tree(file_path, start_path=None):
             for pointer, content in json_tree.items()}
     # we then cast the text elements into their expected types
     tree = {(pathlib.Path(pointer[at.PATH]),
-             pointer[at.MTIME]):
-                (content[at.HASH],
-                 at.PathType(content[at.TYPE]),
-                 content[at.SIZE])
+             pointer[at.MTIME]): (content[at.HASH],
+                                  at.PathType(content[at.TYPE]),
+                                  content[at.SIZE])
             for pointer, content in tree.items()}
     if start_path is not None:
         tree = {(start_path / pointer[at.PATH],
-                 pointer[at.MTIME]):
-                    content
+                 pointer[at.MTIME]): content
                 for pointer, content in tree.items()}
     return tree
 
@@ -129,11 +125,10 @@ def _save_json_listing(listing, file_path, start_path=None):
             for pointer in pointers}
             for content, pointers in listing.items()}
     serializable_listing = {
-        str((content[at.HASH],
-             json.dumps(content[at.TYPE])[1:-1],
-             content[at.SIZE])):
-            [[str(pathlib.PurePosixPath(pointer[at.PATH])), pointer[at.MTIME]]
-             for pointer in pointers]
+        str((content[at.HASH], json.dumps(content[at.TYPE])[1:-1],
+             content[at.SIZE])): [
+            [str(pathlib.PurePosixPath(pointer[at.PATH])), pointer[at.MTIME]]
+            for pointer in pointers]
         for content, pointers in listing.items()}
     json_listing = json.dumps(serializable_listing)
     _write_text(json_listing, file_path)

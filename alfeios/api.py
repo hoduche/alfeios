@@ -35,7 +35,7 @@ def index(path, exclusion=None):
                                                           exclusion=exclusion)
         asd.save_json_index(path, listing, tree, forbidden)
     else:
-        print(colorama.Fore.RED + f'This is not a valid path - exiting',
+        print(colorama.Fore.RED + 'This is not a valid path - exiting',
               file=sys.stderr)
         return
 
@@ -75,7 +75,7 @@ def duplicate(path, exclusion=None, save_index=False):
         if save_index:
             asd.save_json_index(directory_path, listing, tree, forbidden)
     else:
-        print(colorama.Fore.RED + f'This is not a valid path - exiting',
+        print(colorama.Fore.RED + 'This is not a valid path - exiting',
               file=sys.stderr)
         return
 
@@ -89,7 +89,7 @@ def duplicate(path, exclusion=None, save_index=False):
               f'space by going through {str(result_path)}')
     else:
         print(colorama.Fore.GREEN +
-              f'Congratulations there is no duplicate here')
+              'Congratulations there is no duplicate here')
 
 
 def missing(old_path, new_path, exclusion=None, save_index=False):
@@ -130,7 +130,7 @@ def missing(old_path, new_path, exclusion=None, save_index=False):
             asd.save_json_index(old_directory_path, old_listing, old_tree,
                                 old_forbidden)
     else:
-        print(colorama.Fore.RED + f'Old is not a valid path - exiting',
+        print(colorama.Fore.RED + 'Old is not a valid path - exiting',
               file=sys.stderr)
         return
 
@@ -146,7 +146,7 @@ def missing(old_path, new_path, exclusion=None, save_index=False):
             asd.save_json_index(new_directory_path, new_listing, new_tree,
                                 new_forbidden)
     else:
-        print(colorama.Fore.RED + f'New is not a valid path - exiting',
+        print(colorama.Fore.RED + 'New is not a valid path - exiting',
               file=sys.stderr)
         return
 
@@ -160,7 +160,7 @@ def missing(old_path, new_path, exclusion=None, save_index=False):
               f' - please go through {str(result_path)}')
     else:
         print(colorama.Fore.GREEN +
-              f'Congratulations Old content is totally included in New')
+              'Congratulations Old content is totally included in New')
 
 
 def _walk_with_progressbar(path, exclusion=None):

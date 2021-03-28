@@ -14,7 +14,7 @@ tests_data_path = pathlib.Path(__file__).parent / 'data'
 
 folders = ['Folder0', 'Folder0/Folder3',
            'FolderZipFile', 'FolderZipFolder', 'FolderZipNested']
-values = [(f, f) for f in folders]
+vals = [(f, f) for f in folders]
 
 
 def reset_listing_mtime(listing):
@@ -26,7 +26,8 @@ def reset_listing_mtime(listing):
 
 
 def reset_tree_mtime(tree):
-    return {(pointer[at.PATH], 0): content for pointer, content in tree.items()}
+    return {(pointer[at.PATH], 0): content
+            for pointer, content in tree.items()}
 
 
 def sort_json_listing(file_path):
@@ -67,7 +68,7 @@ def teardown(request):
     request.addfinalizer(sort_if_debug)
 
 
-@pytest.mark.parametrize(argnames='folder, name', argvalues=values, ids=folders)
+@pytest.mark.parametrize(argnames='folder, name', argvalues=vals, ids=folders)
 def test_walk(folder, name):
     path = tests_data_path / folder
 
@@ -227,7 +228,7 @@ def test_duplicate_with_zip():
 
     # verify
     # here we only check that the root directory content of 4 folders are equal
-    # thanks to the Merkle tree property of alfeios listing that sould be enough
+    # it sould be enough thanks to the Merkle tree property of alfeios listing
     duplicate_root_content = ('4f8c48630a797715e8b86466e0218aa1',
                               'DIR', 3598557)
     duplicate_root_pointers = duplicate_listing[duplicate_root_content]
