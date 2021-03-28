@@ -1,7 +1,5 @@
 language: python
 python:
-  - "3.6"
-  - "3.7"
   - "3.8"
   - "3.9"
   - "3.9-dev"
@@ -11,5 +9,5 @@ install:
   - python setup.py install
 
 script:
-  - flake8 -vv
+  - flake8 -v
   - pytest -vv
