@@ -210,6 +210,11 @@ def test_duplicate():
         path / '.alfeios_expected' / 'duplicate_listing.json',
         start_path=tests_data_path)
 
+    # reset mtime for everybody as it is updated with the test itself
+    duplicate_listing = reset_listing_mtime(duplicate_listing)
+    expected_duplicate_listing = reset_listing_mtime(
+        expected_duplicate_listing)
+
     # verify
     assert duplicate_listing == expected_duplicate_listing
     assert size_gain == 367645
