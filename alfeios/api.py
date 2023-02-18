@@ -165,13 +165,15 @@ def missing(old_path, new_path, exclusion=None, save_index=False):
 
 def _walk_with_progressbar(path, exclusion=None):
 
+    # First walk without hashing, just to get the total size to hash
     pbar_nb_files = tqdm.tqdm(total=1, desc='Exploring',
                               unit=' files', unit_scale=False)
     l, t, f = aw.walk(path, exclusion=exclusion,
                       should_hash=False, pbar=pbar_nb_files)
-    path_size = t[path][2]
+    path_size = t[(path, path.stat().st_mtime_ns)][at.SIZE]
     pbar_nb_files.close()
 
+    # Second walk with hashing and progress bar based on the total size to hash
     pbar_size = tqdm.tqdm(total=path_size, desc='Indexing ',
                           unit='B', unit_scale=True, unit_divisor=1024)
     listing, tree, forbidden = aw.walk(path, exclusion=exclusion,

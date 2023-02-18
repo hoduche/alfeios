@@ -12,8 +12,11 @@ debug = False
 
 tests_data_path = pathlib.Path(__file__).parent / 'data'
 
-folders = ['Folder0', 'Folder0/Folder3',
-           'FolderZipFile', 'FolderZipFolder', 'FolderZipNested']
+folders = ['Folder0',
+           'Folder0/Folder3',
+           'FolderZipFile',
+           'FolderZipFolder',
+           'FolderZipNested']
 vals = [(f, f) for f in folders]
 
 

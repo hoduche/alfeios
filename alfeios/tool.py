@@ -2,13 +2,14 @@ import enum
 import os.path
 import pathlib
 
+# Content data
+HASH = 0   # content md5 hashcode
+TYPE = 1   # content type : PathType.FILE or PathType.DIR
+SIZE = 2   # content size in bytes
 
-HASH = 0
-TYPE = 1
-SIZE = 2
-
-PATH = 0
-MTIME = 1
+# Pointer data
+PATH = 0   # filesystem path
+MTIME = 1  # last modification time
 
 
 class PathType(str, enum.Enum):
