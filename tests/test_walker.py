@@ -12,12 +12,17 @@ debug = False
 
 tests_data_path = pathlib.Path(__file__).parent / 'data'
 
-folders = ['Folder0',
+folders = ['Folder9',
+           'Folder0',
            'Folder0/Folder3',
            'FolderZipFile',
            'FolderZipFolder',
            'FolderZipNested']
 vals = [(f, f) for f in folders]
+
+########################################################################
+# Helper functions for test only so far
+########################################################################
 
 
 def reset_listing_mtime(listing):
@@ -55,6 +60,11 @@ def sort_json_tree(file_path):
     output_path.write_text('\n'.join(result))
 
 
+########################################################################
+# Setup and Teardown
+########################################################################
+
+
 @pytest.fixture(scope="module", autouse=True)
 def teardown(request):
     # nothing before the tests
@@ -69,6 +79,11 @@ def teardown(request):
                         sort_json_tree(tree_path)
     # sort the trees and listings after the tests
     request.addfinalizer(sort_if_debug)
+
+
+########################################################################
+# Tests
+########################################################################
 
 
 @pytest.mark.parametrize(argnames='folder, name', argvalues=vals, ids=folders)

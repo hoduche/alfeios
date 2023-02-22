@@ -170,7 +170,7 @@ def _walk_with_progressbar(path, exclusion=None):
                               unit=' files', unit_scale=False)
     l, t, f = aw.walk(path, exclusion=exclusion,
                       should_hash=False, pbar=pbar_nb_files)
-    path_size = t[(path, path.stat().st_mtime_ns)][at.SIZE]
+    path_size = t[(path, path.stat().st_mtime)][at.SIZE]
     pbar_nb_files.close()
 
     # Second walk with hashing and progress bar based on the total size to hash

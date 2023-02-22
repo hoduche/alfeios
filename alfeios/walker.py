@@ -6,6 +6,26 @@ import tempfile
 
 import alfeios.tool as at
 
+# TODO:
+"""
+An attempt to build the index as a tree only.
+This should simplify the code without loosing in performance or functionality.
+Maybe to start with we could do :
+- key = path
+- value = (type, mtime, size, hash)
+
+Here are the  different options to simple walk:
+- walk inside compressed files: Yes, No
+- write result inside root folder: Yes, No
+- hash results: Yes, No
+- use last result hashes if path, type, mtime and size are unchanged: Yes, No
+- find previous result inside or outside root folder: Yes, No
+- handle progress bar (interface implemented by tqdm): Yes, No
+- handle results in color (interface implemented by colorama): Yes, No
+- hash directories: Yes, No
+
+"""
+
 
 def walk(path, exclusion=None, should_hash=True, pbar=None):
     """ Recursively walks through a root directory to index its content
@@ -68,8 +88,9 @@ def _recursive_walk(path, listing, tree, forbidden, exclusion,
                         # by construction of the recursion
                         # tree is guaranteed to contain child in its keys
                         # however zip file mtime is modified during the walk
-                        child_content = [content for pointer, content
-                                         in tree.items()
+                        # todo no longer the case so could be simplified !!!
+                        child_content = [content for
+                                         pointer, content in tree.items()
                                          if pointer[at.PATH] == child][0]
                         dir_size += child_content[at.SIZE]
                         dir_hashes.append(child_content[at.HASH])
@@ -81,7 +102,7 @@ def _recursive_walk(path, listing, tree, forbidden, exclusion,
         else:
             dir_hash_code = ''
         dir_content = (dir_hash_code, at.PathType.DIR, dir_size)
-        dir_pointer = (path, path.stat().st_mtime_ns)
+        dir_pointer = (path, path.stat().st_mtime)
         listing[dir_content].add(dir_pointer)
         tree[dir_pointer] = dir_content
 
@@ -89,8 +110,8 @@ def _recursive_walk(path, listing, tree, forbidden, exclusion,
                                             '.xztar']:
         temp_dir_path = pathlib.Path(tempfile.mkdtemp())
         try:
-            # v3.7 accepts pathlib as extract_dir=
-            shutil.unpack_archive(str(path), extract_dir=str(temp_dir_path))
+            shutil.unpack_archive(path, extract_dir=temp_dir_path)
+            at.restore_mtime_after_unpack(path, extract_dir=temp_dir_path)
             # calls the recursion one step above to create separate output
             # that will be merged afterwards
             zl, zt, zf = walk(temp_dir_path, exclusion,
@@ -134,7 +155,7 @@ def _hash_and_index_file(path, listing, tree, should_hash, pbar):
             pbar.update(1)
         hash_code = ''
     size = path.stat().st_size
-    mtime = path.stat().st_mtime_ns
+    mtime = path.stat().st_mtime
     content = (hash_code, at.PathType.FILE, size)
     pointer = (path, mtime)
     listing[content].add(pointer)

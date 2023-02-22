@@ -1,6 +1,9 @@
 import enum
+import os
 import os.path
 import pathlib
+import time
+import zipfile
 
 # Content data
 HASH = 0   # content md5 hashcode
@@ -29,3 +32,11 @@ def natural_size(num, unit='B'):
         num /= 1024.0
     result = f'{num:.1f} Yi{unit}'
     return result
+
+
+def restore_mtime_after_unpack(archive, extract_dir):
+    for f in zipfile.ZipFile(archive, 'r').infolist():
+        fullpath = extract_dir / f.filename
+        # still need to adjust the dt o/w item will have the current dt
+        date_time = time.mktime(f.date_time + (0, 0, -1))
+        os.utime(fullpath, (date_time, date_time))
