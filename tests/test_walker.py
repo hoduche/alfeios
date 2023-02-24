@@ -1,6 +1,7 @@
 import collections
 import json
 import pathlib
+import tarfile
 
 import pytest
 
@@ -20,8 +21,9 @@ folders = ['Folder9',  # only one file
            'FolderZipNested']
 vals = [(f, f) for f in folders]
 
+
 ########################################################################
-# Helper functions for test only so far
+# Helper functions used in tests only so far
 ########################################################################
 
 
@@ -38,7 +40,7 @@ def reset_tree_mtime(tree):
             for pointer, content in tree.items()}
 
 
-def sort_json_listing(file_path):
+def log_sorted_json_listing(file_path):
     separator = '-' * 70
     result = []
     json_listing = json.loads(file_path.read_text())
@@ -51,7 +53,7 @@ def sort_json_listing(file_path):
     output_path.write_text('\n'.join(result))
 
 
-def sort_json_tree(file_path):
+def log_sorted_json_tree(file_path):
     result = []
     json_tree = json.loads(file_path.read_text())
     for pointer in sorted(json_tree.keys()):
@@ -64,21 +66,30 @@ def sort_json_tree(file_path):
 # Setup and Teardown
 ########################################################################
 
+@pytest.fixture(scope="module", autouse=True)
+def data_path(tmp_path_factory):
+    # setup once for all tests
+    tar = tarfile.open(tests_data_path / 'data.tar.gz')
+    tmp_path = tmp_path_factory.mktemp('data')
+    tar.extractall(tmp_path)
+    tar.close()
+    return tmp_path
+
 
 @pytest.fixture(scope="module", autouse=True)
-def teardown(request):
-    # nothing before the tests
-    def sort_if_debug():
+def teardown(request, data_path):
+    # teardown for each test in case you want to log debug info
+    def log_sorted_results():
         if debug:
             for folder in folders:
                 for alfeios in ['.alfeios', '.alfeios_expected']:
-                    alfeios_path = tests_data_path / folder / alfeios
+                    alfeios_path = data_path / folder / alfeios
                     for listing_path in alfeios_path.glob('*listing*.json'):
-                        sort_json_listing(listing_path)
+                        log_sorted_json_listing(listing_path)
                     for tree_path in alfeios_path.glob('*tree*.json'):
-                        sort_json_tree(tree_path)
+                        log_sorted_json_tree(tree_path)
     # sort the trees and listings after the tests
-    request.addfinalizer(sort_if_debug)
+    request.addfinalizer(log_sorted_results)
 
 
 ########################################################################
@@ -87,24 +98,21 @@ def teardown(request):
 
 
 @pytest.mark.parametrize(argnames='folder, name', argvalues=vals, ids=folders)
-def test_walk(folder, name):
-    path = tests_data_path / folder
+def test_walk(folder, name, data_path):
+    path = data_path / folder
 
     # run
     listing, tree, forbidden = aw.walk(path)
 
     # for logging purpose only
     if debug:
-        asd.save_json_index(path, listing, tree, forbidden,
-                            start_path=tests_data_path)
+        asd.save_json_index(path, listing, tree, forbidden, start_path=path)
 
     # load expected
     expected_listing = asd.load_json_listing(
-        path / '.alfeios_expected' / 'listing.json',
-        start_path=tests_data_path)
+        path / '.alfeios_expected' / 'listing.json', start_path=data_path)
     expected_tree = asd.load_json_tree(
-        path / '.alfeios_expected' / 'tree.json',
-        start_path=tests_data_path)
+        path / '.alfeios_expected' / 'tree.json', start_path=data_path)
 
     # reset mtime for everybody as it is updated with the test itself
     listing = reset_listing_mtime(listing)
@@ -118,8 +126,8 @@ def test_walk(folder, name):
     assert forbidden == {}
 
 
-def test_walk_with_exclusions():
-    path = tests_data_path / 'Folder0'
+def test_walk_with_exclusions(data_path):
+    path = data_path / 'Folder0'
     exclusion = {'Folder3', 'Folder4_1', 'file3.txt', 'groundhog.png'}
 
     # run
@@ -128,16 +136,16 @@ def test_walk_with_exclusions():
     # for logging purpose only
     if debug:
         asd.save_json_index(path, listing, tree, forbidden,
-                            start_path=tests_data_path,
+                            start_path=data_path,
                             prefix='with_exclusions_')
 
     # load expected
     expected_listing = asd.load_json_listing(
         path / '.alfeios_expected' / 'listing_with_exclusions.json',
-        start_path=tests_data_path)
+        start_path=data_path)
     expected_tree = asd.load_json_tree(
         path / '.alfeios_expected' / 'tree_with_exclusions.json',
-        start_path=tests_data_path)
+        start_path=data_path)
 
     # reset mtime for everybody as it is updated with the test itself
     listing = reset_listing_mtime(listing)
@@ -151,9 +159,9 @@ def test_walk_with_exclusions():
     assert forbidden == {}
 
 
-def test_unify():
-    path0 = tests_data_path / 'Folder0'
-    path8 = tests_data_path / 'Folder8'
+def test_unify(data_path):
+    path0 = data_path / 'Folder0'
+    path8 = data_path / 'Folder8'
 
     # run
     listing0, tree0, forbidden0 = aw.walk(path0)
@@ -164,11 +172,11 @@ def test_unify():
 
     # load expected
     expected_listing = asd.load_json_listing(
-        tests_data_path / '.alfeios_expected' / 'listing_0_8.json',
-        start_path=tests_data_path)
+        data_path / '.alfeios_expected' / 'listing_0_8.json',
+        start_path=data_path)
     expected_tree = asd.load_json_tree(
-        tests_data_path / '.alfeios_expected' / 'tree_0_8.json',
-        start_path=tests_data_path)
+        data_path / '.alfeios_expected' / 'tree_0_8.json',
+        start_path=data_path)
 
     # reset mtime for everybody as it is updated with the test itself
     listing = reset_listing_mtime(listing)
@@ -182,8 +190,8 @@ def test_unify():
     assert forbidden == {}
 
 
-def test_unify_with_exclusion():
-    path = tests_data_path / 'Folder0'
+def test_unify_with_exclusion(data_path):
+    path = data_path / 'Folder0'
 
     # run
     listing0_no3, tree0_no3, forbidden0_no3 = aw.walk(path,
@@ -200,9 +208,9 @@ def test_unify_with_exclusion():
     listing_uni.pop(('7e472b2b54ba97314c63988db267d125', 'DIR', 2698920))
     listing0_full.pop(('4f8c48630a797715e8b86466e0218aa1', 'DIR', 3598557))
     tree_uni = {pointer: content for pointer, content in tree_uni.items()
-                if pointer[at.PATH] != tests_data_path / 'Folder0'}
+                if pointer[at.PATH] != data_path / 'Folder0'}
     tree0_full = {pointer: content for pointer, content in tree0_full.items()
-                  if pointer[at.PATH] != tests_data_path / 'Folder0'}
+                  if pointer[at.PATH] != data_path / 'Folder0'}
 
     # verify
     assert listing_uni == listing0_full
@@ -210,8 +218,8 @@ def test_unify_with_exclusion():
     assert forbid_uni == forbidden0_full
 
 
-def test_duplicate():
-    path = tests_data_path / 'Folder0' / 'Folder3'
+def test_duplicate(data_path):
+    path = data_path / 'Folder0' / 'Folder3'
 
     # run
     listing, tree, forbidden = aw.walk(path)
@@ -220,13 +228,13 @@ def test_duplicate():
     # for logging purpose only
     if debug:
         asd.save_json_index(path, duplicate_listing,
-                            start_path=tests_data_path,
+                            start_path=data_path,
                             prefix='duplicate_')
 
     # load expected
     expected_duplicate_listing = asd.load_json_listing(
         path / '.alfeios_expected' / 'duplicate_listing.json',
-        start_path=tests_data_path)
+        start_path=data_path)
 
     # reset mtime for everybody as it is updated with the test itself
     duplicate_listing = reset_listing_mtime(duplicate_listing)
@@ -238,15 +246,15 @@ def test_duplicate():
     assert size_gain == 367645
 
 
-def test_duplicate_with_zip():
+def test_duplicate_with_zip(data_path):
     # run
-    listing, tree, forbidden = aw.walk(tests_data_path)
+    listing, tree, forbidden = aw.walk(data_path)
     duplicate_listing, size_gain = aw.get_duplicate(listing)
 
     # for logging purpose only
     if debug:
-        asd.save_json_index(tests_data_path, duplicate_listing,
-                            start_path=tests_data_path,
+        asd.save_json_index(data_path, duplicate_listing,
+                            start_path=data_path,
                             prefix='duplicate_with_zip_')
 
     # verify
@@ -258,14 +266,14 @@ def test_duplicate_with_zip():
     # remove mtime for everybody as it is updated with the test itself
     duplicate_root_directories = {path for path, mtime
                                   in duplicate_root_pointers}
-    assert duplicate_root_directories == {tests_data_path / 'Folder0',
-                                          tests_data_path / 'FolderZipFile',
-                                          tests_data_path / 'FolderZipFolder',
-                                          tests_data_path / 'FolderZipNested'}
+    assert duplicate_root_directories == {data_path / 'Folder0',
+                                          data_path / 'FolderZipFile',
+                                          data_path / 'FolderZipFolder',
+                                          data_path / 'FolderZipNested'}
 
 
-def test_missing_fully_included():
-    path = tests_data_path / 'Folder0'
+def test_missing_fully_included(data_path):
+    path = data_path / 'Folder0'
 
     # run
     listing3, tree3, forbidden3 = aw.walk(path / 'Folder3')
@@ -274,30 +282,30 @@ def test_missing_fully_included():
 
     # for logging purpose only
     if debug:
-        asd.save_json_index(path, missing_listing, start_path=tests_data_path,
+        asd.save_json_index(path, missing_listing, start_path=data_path,
                             prefix='missing_fully_included_')
 
     # verify
     assert missing_listing == {}
 
 
-def test_missing_not_fully_included():
-    path = tests_data_path / 'Folder0'
+def test_missing_not_fully_included(data_path):
+    path = data_path / 'Folder0'
 
     # run
-    listing8, tree8, forbidden8 = aw.walk(tests_data_path / 'Folder8')
+    listing8, tree8, forbidden8 = aw.walk(data_path / 'Folder8')
     listing0, tree0, forbidden0 = aw.walk(path)
     missing_listing = aw.get_missing(listing8, listing0)
 
     # for logging purpose only
     if debug:
-        asd.save_json_index(path, missing_listing, start_path=tests_data_path,
+        asd.save_json_index(path, missing_listing, start_path=data_path,
                             prefix='missing_not_fully_included_')
 
     # load expected
     expected_missing_listing = asd.load_json_listing(
         path / '.alfeios_expected' / 'listing_missing_from_Folder8.json',
-        start_path=tests_data_path)
+        start_path=data_path)
 
     # reset mtime for everybody as it is updated with the test itself
     missing_listing = reset_listing_mtime(missing_listing)
@@ -307,14 +315,14 @@ def test_missing_not_fully_included():
     assert missing_listing == expected_missing_listing
 
 
-def test_tree_to_listing():
-    path = tests_data_path / 'Folder0' / '.alfeios_expected'
+def test_tree_to_listing(data_path):
+    path = data_path / 'Folder0' / '.alfeios_expected'
 
     # load expected with start_path
     expected_listing = asd.load_json_listing(path / 'listing.json',
-                                             start_path=tests_data_path)
+                                             start_path=data_path)
     expected_tree = asd.load_json_tree(path / 'tree.json',
-                                       start_path=tests_data_path)
+                                       start_path=data_path)
 
     # verify
     assert aw.tree_to_listing(expected_tree) == expected_listing
@@ -327,14 +335,14 @@ def test_tree_to_listing():
     assert aw.tree_to_listing(expected_tree) == expected_listing
 
 
-def test_listing_to_tree():
-    path = tests_data_path / 'Folder0' / '.alfeios_expected'
+def test_listing_to_tree(data_path):
+    path = data_path / 'Folder0' / '.alfeios_expected'
 
     # load expected with start_path
     expected_listing = asd.load_json_listing(path / 'listing.json',
-                                             start_path=tests_data_path)
+                                             start_path=data_path)
     expected_tree = asd.load_json_tree(path / 'tree.json',
-                                       start_path=tests_data_path)
+                                       start_path=data_path)
 
     # verify
     assert aw.listing_to_tree(expected_listing) == expected_tree
