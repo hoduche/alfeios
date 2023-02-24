@@ -12,9 +12,9 @@ debug = False
 
 tests_data_path = pathlib.Path(__file__).parent / 'data'
 
-folders = ['Folder9',
-           'Folder0',
-           'Folder0/Folder3',
+folders = ['Folder9',  # only one file
+           'Folder0',  # complete use case without zip files
+           'Folder0/Folder3',  # subfolder
            'FolderZipFile',
            'FolderZipFolder',
            'FolderZipNested']
