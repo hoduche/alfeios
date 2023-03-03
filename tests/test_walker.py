@@ -1,7 +1,8 @@
-import collections
 import json
+import os
 import pathlib
 import tarfile
+import time
 
 import pytest
 
@@ -27,17 +28,9 @@ vals = [(f, f) for f in folders]
 ########################################################################
 
 
-def reset_listing_mtime(listing):
-    result = collections.defaultdict(set)
-    for content, pointers in listing.items():
-        for pointer in pointers:
-            result[content].add((pointer[at.PATH], 0))
-    return result
-
-
-def reset_tree_mtime(tree):
-    return {(pointer[at.PATH], 0): content
-            for pointer, content in tree.items()}
+def reset_folder_time(path):
+    date_time = time.mktime((2021, 1, 16, 11, 0, 0, 0, 0, -1))
+    os.utime(path, (date_time, date_time))
 
 
 def log_sorted_json_listing(file_path):
@@ -81,7 +74,7 @@ def teardown(request, data_path):
     # teardown for each test in case you want to log debug info
     def log_sorted_results():
         if debug:
-            for folder in folders:
+            for folder in folders + ['.']:
                 for alfeios in ['.alfeios', '.alfeios_expected']:
                     alfeios_path = data_path / folder / alfeios
                     for listing_path in alfeios_path.glob('*listing*.json'):
@@ -106,19 +99,15 @@ def test_walk(folder, name, data_path):
 
     # for logging purpose only
     if debug:
-        asd.save_json_index(path, listing, tree, forbidden, start_path=path)
+        asd.save_json_index(path, listing, tree, forbidden,
+                            start_path=data_path)
+        reset_folder_time(path)
 
     # load expected
     expected_listing = asd.load_json_listing(
         path / '.alfeios_expected' / 'listing.json', start_path=data_path)
     expected_tree = asd.load_json_tree(
         path / '.alfeios_expected' / 'tree.json', start_path=data_path)
-
-    # reset mtime for everybody as it is updated with the test itself
-    listing = reset_listing_mtime(listing)
-    expected_listing = reset_listing_mtime(expected_listing)
-    tree = reset_tree_mtime(tree)
-    expected_tree = reset_tree_mtime(expected_tree)
 
     # verify
     assert listing == expected_listing
@@ -138,6 +127,7 @@ def test_walk_with_exclusions(data_path):
         asd.save_json_index(path, listing, tree, forbidden,
                             start_path=data_path,
                             prefix='with_exclusions_')
+        reset_folder_time(path)
 
     # load expected
     expected_listing = asd.load_json_listing(
@@ -146,12 +136,6 @@ def test_walk_with_exclusions(data_path):
     expected_tree = asd.load_json_tree(
         path / '.alfeios_expected' / 'tree_with_exclusions.json',
         start_path=data_path)
-
-    # reset mtime for everybody as it is updated with the test itself
-    listing = reset_listing_mtime(listing)
-    expected_listing = reset_listing_mtime(expected_listing)
-    tree = reset_tree_mtime(tree)
-    expected_tree = reset_tree_mtime(expected_tree)
 
     # verify
     assert listing == expected_listing
@@ -170,6 +154,13 @@ def test_unify(data_path):
                                         [tree0, tree8],
                                         [forbidden0, forbidden8])
 
+    # for logging purpose only
+    if debug:
+        asd.save_json_index(data_path, listing, tree, forbidden,
+                            start_path=data_path,
+                            prefix='with_exclusions_')
+        reset_folder_time(data_path)
+
     # load expected
     expected_listing = asd.load_json_listing(
         data_path / '.alfeios_expected' / 'listing_0_8.json',
@@ -177,12 +168,6 @@ def test_unify(data_path):
     expected_tree = asd.load_json_tree(
         data_path / '.alfeios_expected' / 'tree_0_8.json',
         start_path=data_path)
-
-    # reset mtime for everybody as it is updated with the test itself
-    listing = reset_listing_mtime(listing)
-    expected_listing = reset_listing_mtime(expected_listing)
-    tree = reset_tree_mtime(tree)
-    expected_tree = reset_tree_mtime(expected_tree)
 
     # verify
     assert listing == expected_listing
@@ -230,16 +215,12 @@ def test_duplicate(data_path):
         asd.save_json_index(path, duplicate_listing,
                             start_path=data_path,
                             prefix='duplicate_')
+        reset_folder_time(path)
 
     # load expected
     expected_duplicate_listing = asd.load_json_listing(
         path / '.alfeios_expected' / 'duplicate_listing.json',
         start_path=data_path)
-
-    # reset mtime for everybody as it is updated with the test itself
-    duplicate_listing = reset_listing_mtime(duplicate_listing)
-    expected_duplicate_listing = reset_listing_mtime(
-        expected_duplicate_listing)
 
     # verify
     assert duplicate_listing == expected_duplicate_listing
@@ -256,6 +237,7 @@ def test_duplicate_with_zip(data_path):
         asd.save_json_index(data_path, duplicate_listing,
                             start_path=data_path,
                             prefix='duplicate_with_zip_')
+        reset_folder_time(data_path)
 
     # verify
     # here we only check that the root directory content of 4 folders are equal
@@ -264,6 +246,7 @@ def test_duplicate_with_zip(data_path):
                               'DIR', 3598557)
     duplicate_root_pointers = duplicate_listing[duplicate_root_content]
     # remove mtime for everybody as it is updated with the test itself
+    # todo remove this as it should work !
     duplicate_root_directories = {path for path, mtime
                                   in duplicate_root_pointers}
     assert duplicate_root_directories == {data_path / 'Folder0',
@@ -284,6 +267,7 @@ def test_missing_fully_included(data_path):
     if debug:
         asd.save_json_index(path, missing_listing, start_path=data_path,
                             prefix='missing_fully_included_')
+        reset_folder_time(path)
 
     # verify
     assert missing_listing == {}
@@ -301,15 +285,12 @@ def test_missing_not_fully_included(data_path):
     if debug:
         asd.save_json_index(path, missing_listing, start_path=data_path,
                             prefix='missing_not_fully_included_')
+        reset_folder_time(path)
 
     # load expected
     expected_missing_listing = asd.load_json_listing(
         path / '.alfeios_expected' / 'listing_missing_from_Folder8.json',
         start_path=data_path)
-
-    # reset mtime for everybody as it is updated with the test itself
-    missing_listing = reset_listing_mtime(missing_listing)
-    expected_missing_listing = reset_listing_mtime(expected_missing_listing)
 
     # verify
     assert missing_listing == expected_missing_listing

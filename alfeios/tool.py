@@ -35,8 +35,14 @@ def natural_size(num, unit='B'):
 
 
 def restore_mtime_after_unpack(archive, extract_dir):
-    for f in zipfile.ZipFile(archive, 'r').infolist():
-        fullpath = extract_dir / f.filename
-        # still need to adjust the dt o/w item will have the current dt
-        date_time = time.mktime(f.date_time + (0, 0, -1))
-        os.utime(fullpath, (date_time, date_time))
+    archive_mtime = archive.stat().st_mtime
+    os.utime(extract_dir, (archive_mtime, archive_mtime))
+    info_map = {f.filename: f.date_time
+                for f in zipfile.ZipFile(archive, 'r').infolist()}
+    for file in extract_dir.rglob("*"):
+        if file.name in info_map:
+            # still need to adjust the dt o/w item will have the current dt
+            mtime = time.mktime(info_map[file.name] + (0, 0, -1))
+        else:
+            mtime = archive_mtime
+        os.utime(file, (mtime, mtime))
