@@ -6,6 +6,7 @@ import time
 
 import pytest
 
+import alfeios.listing as al
 import alfeios.serialize as asd
 import alfeios.tool as at
 import alfeios.walker as aw
@@ -95,19 +96,19 @@ def test_walk(folder, name, data_path):
     path = data_path / folder
 
     # run
-    listing, tree, forbidden = aw.walk(path)
+    tree, forbidden = aw.walk(path)
+    listing = al.tree_to_listing(tree)
 
     # for logging purpose only
     if debug:
-        asd.save_json_index(path, listing, tree, forbidden,
-                            start_path=data_path)
+        asd.save_json_tree(path, tree, forbidden, start_path=data_path)
+        asd.save_json_listing(path, listing, start_path=data_path)
         reset_folder_time(path)
 
     # load expected
-    expected_listing = asd.load_json_listing(
-        path / '.alfeios_expected' / 'listing.json', start_path=data_path)
     expected_tree = asd.load_json_tree(
         path / '.alfeios_expected' / 'tree.json', start_path=data_path)
+    expected_listing = al.tree_to_listing(expected_tree)
 
     # verify
     assert listing == expected_listing
@@ -120,22 +121,22 @@ def test_walk_with_exclusions(data_path):
     exclusion = {'Folder3', 'Folder4_1', 'file3.txt', 'groundhog.png'}
 
     # run
-    listing, tree, forbidden = aw.walk(path, exclusion=exclusion)
+    tree, forbidden = aw.walk(path, exclusion=exclusion)
+    listing = al.tree_to_listing(tree)
 
     # for logging purpose only
     if debug:
-        asd.save_json_index(path, listing, tree, forbidden,
-                            start_path=data_path,
-                            prefix='with_exclusions_')
+        asd.save_json_tree(path, tree, forbidden, start_path=data_path,
+                           prefix='with_exclusions_')
+        asd.save_json_listing(path, listing, start_path=data_path,
+                              prefix='with_exclusions_')
         reset_folder_time(path)
 
     # load expected
-    expected_listing = asd.load_json_listing(
-        path / '.alfeios_expected' / 'listing_with_exclusions.json',
-        start_path=data_path)
     expected_tree = asd.load_json_tree(
         path / '.alfeios_expected' / 'tree_with_exclusions.json',
         start_path=data_path)
+    expected_listing = al.tree_to_listing(expected_tree)
 
     # verify
     assert listing == expected_listing
@@ -148,26 +149,29 @@ def test_unify(data_path):
     path8 = data_path / 'Folder8'
 
     # run
-    listing0, tree0, forbidden0 = aw.walk(path0)
-    listing8, tree8, forbidden8 = aw.walk(path8)
-    listing, tree, forbidden = aw.unify([listing0, listing8],
+    tree0, forbidden0 = aw.walk(path0)
+    listing0 = al.tree_to_listing(tree0)
+
+    tree8, forbidden8 = aw.walk(path8)
+    listing8 = al.tree_to_listing(tree8)
+
+    listing, tree, forbidden = al.unify([listing0, listing8],
                                         [tree0, tree8],
                                         [forbidden0, forbidden8])
 
     # for logging purpose only
     if debug:
-        asd.save_json_index(data_path, listing, tree, forbidden,
-                            start_path=data_path,
-                            prefix='with_exclusions_')
+        asd.save_json_tree(data_path, tree, forbidden, start_path=data_path,
+                           prefix='with_exclusions_')
+        asd.save_json_listing(data_path, listing, start_path=data_path,
+                              prefix='with_exclusions_')
         reset_folder_time(data_path)
 
     # load expected
-    expected_listing = asd.load_json_listing(
-        data_path / '.alfeios_expected' / 'listing_0_8.json',
-        start_path=data_path)
     expected_tree = asd.load_json_tree(
         data_path / '.alfeios_expected' / 'tree_0_8.json',
         start_path=data_path)
+    expected_listing = al.tree_to_listing(expected_tree)
 
     # verify
     assert listing == expected_listing
@@ -179,13 +183,18 @@ def test_unify_with_exclusion(data_path):
     path = data_path / 'Folder0'
 
     # run
-    listing0_no3, tree0_no3, forbidden0_no3 = aw.walk(path,
-                                                      exclusion={'Folder3'})
-    listing3, tree3, forbidden3 = aw.walk(path / 'Folder3')
-    listing_uni, tree_uni, forbid_uni = aw.unify([listing0_no3, listing3],
+    tree0_no3, forbidden0_no3 = aw.walk(path, exclusion={'Folder3'})
+    listing0_no3 = al.tree_to_listing(tree0_no3)
+
+    tree3, forbidden3 = aw.walk(path / 'Folder3')
+    listing3 = al.tree_to_listing(tree3)
+
+    listing_uni, tree_uni, forbid_uni = al.unify([listing0_no3, listing3],
                                                  [tree0_no3, tree3],
                                                  [forbidden0_no3, forbidden3])
-    listing0_full, tree0_full, forbidden0_full = aw.walk(path)
+
+    tree0_full, forbidden0_full = aw.walk(path)
+    listing0_full = al.tree_to_listing(tree0_full)
 
     # remove the root folder record
     # as the run with exclusion does not give the full size and hash
@@ -207,14 +216,14 @@ def test_duplicate(data_path):
     path = data_path / 'Folder0' / 'Folder3'
 
     # run
-    listing, tree, forbidden = aw.walk(path)
-    duplicate_listing, size_gain = aw.get_duplicate(listing)
+    tree, forbidden = aw.walk(path)
+    listing = al.tree_to_listing(tree)
+    duplicate_listing, size_gain = al.get_duplicate(listing)
 
     # for logging purpose only
     if debug:
-        asd.save_json_index(path, duplicate_listing,
-                            start_path=data_path,
-                            prefix='duplicate_')
+        asd.save_json_listing(path, duplicate_listing, start_path=data_path,
+                              prefix='duplicate_')
         reset_folder_time(path)
 
     # load expected
@@ -229,14 +238,15 @@ def test_duplicate(data_path):
 
 def test_duplicate_with_zip(data_path):
     # run
-    listing, tree, forbidden = aw.walk(data_path)
-    duplicate_listing, size_gain = aw.get_duplicate(listing)
+    tree, forbidden = aw.walk(data_path)
+    listing = al.tree_to_listing(tree)
+    duplicate_listing, size_gain = al.get_duplicate(listing)
 
     # for logging purpose only
     if debug:
-        asd.save_json_index(data_path, duplicate_listing,
-                            start_path=data_path,
-                            prefix='duplicate_with_zip_')
+        asd.save_json_listing(data_path, duplicate_listing,
+                              start_path=data_path,
+                              prefix='duplicate_with_zip_')
         reset_folder_time(data_path)
 
     # verify
@@ -245,28 +255,29 @@ def test_duplicate_with_zip(data_path):
     duplicate_root_content = ('4f8c48630a797715e8b86466e0218aa1',
                               'DIR', 3598557)
     duplicate_root_pointers = duplicate_listing[duplicate_root_content]
-    # remove mtime for everybody as it is updated with the test itself
-    # todo remove this as it should work !
-    duplicate_root_directories = {path for path, mtime
-                                  in duplicate_root_pointers}
-    assert duplicate_root_directories == {data_path / 'Folder0',
-                                          data_path / 'FolderZipFile',
-                                          data_path / 'FolderZipFolder',
-                                          data_path / 'FolderZipNested'}
+    assert duplicate_root_pointers == {
+        (data_path / 'Folder0', 1610791200.0),
+        (data_path / 'FolderZipFile', 1610791200.0),
+        (data_path / 'FolderZipFolder', 1610791200.0),
+        (data_path / 'FolderZipNested', 1610791200.0)}
 
 
 def test_missing_fully_included(data_path):
     path = data_path / 'Folder0'
 
     # run
-    listing3, tree3, forbidden3 = aw.walk(path / 'Folder3')
-    listing0, tree0, forbidden0 = aw.walk(path)
-    missing_listing = aw.get_missing(listing3, listing0)
+    tree3, forbidden3 = aw.walk(path / 'Folder3')
+    listing3 = al.tree_to_listing(tree3)
+
+    tree0, forbidden0 = aw.walk(path)
+    listing0 = al.tree_to_listing(tree0)
+
+    missing_listing = al.get_missing(listing3, listing0)
 
     # for logging purpose only
     if debug:
-        asd.save_json_index(path, missing_listing, start_path=data_path,
-                            prefix='missing_fully_included_')
+        asd.save_json_listing(path, missing_listing, start_path=data_path,
+                              prefix='missing_fully_included_')
         reset_folder_time(path)
 
     # verify
@@ -277,14 +288,18 @@ def test_missing_not_fully_included(data_path):
     path = data_path / 'Folder0'
 
     # run
-    listing8, tree8, forbidden8 = aw.walk(data_path / 'Folder8')
-    listing0, tree0, forbidden0 = aw.walk(path)
-    missing_listing = aw.get_missing(listing8, listing0)
+    tree8, forbidden8 = aw.walk(data_path / 'Folder8')
+    listing8 = al.tree_to_listing(tree8)
+
+    tree0, forbidden0 = aw.walk(path)
+    listing0 = al.tree_to_listing(tree0)
+
+    missing_listing = al.get_missing(listing8, listing0)
 
     # for logging purpose only
     if debug:
-        asd.save_json_index(path, missing_listing, start_path=data_path,
-                            prefix='missing_not_fully_included_')
+        asd.save_json_listing(path, missing_listing, start_path=data_path,
+                              prefix='missing_not_fully_included_')
         reset_folder_time(path)
 
     # load expected
@@ -306,14 +321,14 @@ def test_tree_to_listing(data_path):
                                        start_path=data_path)
 
     # verify
-    assert aw.tree_to_listing(expected_tree) == expected_listing
+    assert al.tree_to_listing(expected_tree) == expected_listing
 
     # load expected without start_path
     expected_listing = asd.load_json_listing(path / 'listing.json')
     expected_tree = asd.load_json_tree(path / 'tree.json')
 
     # verify
-    assert aw.tree_to_listing(expected_tree) == expected_listing
+    assert al.tree_to_listing(expected_tree) == expected_listing
 
 
 def test_listing_to_tree(data_path):
@@ -326,11 +341,11 @@ def test_listing_to_tree(data_path):
                                        start_path=data_path)
 
     # verify
-    assert aw.listing_to_tree(expected_listing) == expected_tree
+    assert al.listing_to_tree(expected_listing) == expected_tree
 
     # load expected without start_path
     expected_listing = asd.load_json_listing(path / 'listing.json')
     expected_tree = asd.load_json_tree(path / 'tree.json')
 
     # verify
-    assert aw.listing_to_tree(expected_listing) == expected_tree
+    assert al.listing_to_tree(expected_listing) == expected_tree

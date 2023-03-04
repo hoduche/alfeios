@@ -9,21 +9,15 @@ import tempfile
 import alfeios.tool as at
 
 
-def save_json_index(dir_path, listing, tree=None, forbidden=None,
-                    start_path=None, prefix=''):
+def save_json_tree(dir_path, tree, forbidden=None, start_path=None, prefix=''):
     """
-
-    Save the three data structures of the index (listing, tree and
-    forbidden) as json files, tagged with the current date and time plus a user
-    definable prefix, in a .alfeios subdirectory, inside the directory passed
-    as first argument
+    Save the 2 data structures of the index (tree and  forbidden) as json files,
+    tagged with the current date and time plus a user definable prefix,
+    in a .alfeios subdirectory, inside the directory passed as first argument
 
     Args:
         dir_path (pathlib.Path): path to the directory where the index will be
         saved (in a .alfeios subdirectory)
-        listing (collections.defaultdict(set) =
-                {(hash, type, int): {(pathlib.Path, int)}}):
-                listing to serialize
         tree (dict = {(pathlib.Path, int): (hash, type, int)}):
              tree to serialize
         forbidden (dict =
@@ -43,9 +37,7 @@ def save_json_index(dir_path, listing, tree=None, forbidden=None,
 
     tag = datetime.datetime.now().strftime('%Y_%m_%d_%H_%M_%S_') + prefix
 
-    _save_json_listing(listing, path / (tag + 'listing.json'), start_path)
-    if tree is not None:
-        _save_json_tree(tree, path / (tag + 'tree.json'), start_path)
+    _save_json_tree(tree, path / (tag + 'tree.json'), start_path)
     if forbidden is not None:
         _save_json_forbidden(forbidden, path / (tag + 'forbidden.json'),
                              start_path)
@@ -53,9 +45,40 @@ def save_json_index(dir_path, listing, tree=None, forbidden=None,
     return tag
 
 
-def load_json_listing(file_path, start_path=None):
+def save_json_listing(dir_path, listing, start_path=None, prefix=''):
+    """
+    Save listing as json file, tagged with the current date and time plus a user
+    definable prefix, in a .alfeios subdirectory, inside the directory passed
+    as first argument
+
+    Args:
+        dir_path (pathlib.Path): path to the directory where the index will be
+        saved (in a .alfeios subdirectory)
+        listing (collections.defaultdict(set) =
+                {(hash, type, int): {(pathlib.Path, int)}}):
+                listing to serialize
+        start_path (pathlib.Path): start path to remove from each path in the
+                                   json serialized index
+        prefix (str): prefix to prepend to index json files
+
+    Returns:
+        tag with the current date and time plus a user definable prefix(str)
     """
 
+    path = dir_path / '.alfeios'
+    if not pathlib.Path(path).is_dir():
+        pathlib.Path(path).mkdir()
+
+    tag = datetime.datetime.now().strftime('%Y_%m_%d_%H_%M_%S_') + prefix
+
+    _save_json_listing(listing, path / (tag + 'listing.json'), start_path)
+
+    return tag
+
+
+def load_json_listing(file_path, start_path=None):
+    # todo: used only by tests -> move it to tests ?
+    """
     Args:
         file_path (pathlib.Path): path to an existing json serialized listing
         start_path (pathlib.Path): start path to prepend to each relative path
@@ -89,7 +112,6 @@ def load_json_listing(file_path, start_path=None):
 
 def load_json_tree(file_path, start_path=None):
     """
-
     Args:
         file_path (pathlib.Path): path to an existing json serialized tree
         start_path (pathlib.Path): start path to prepend to each relative path
