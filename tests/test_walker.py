@@ -8,8 +8,14 @@ import pytest
 
 import alfeios.listing as al
 import alfeios.serialize as asd
-import alfeios.tool as at
 import alfeios.walker as aw
+
+"""
+To replace expected results, you can use sed like this:
+find . -type f -name "*tree*.json" | xargs sed -i -E 's/"\(([^,]+), ([0-9\.]+)\)": \[([^,]+), ([^,]+), ([0-9]+)\]/\1: \[\3, \4, \5, \2\]/g'
+find . -type f -name "*tree*.json" | xargs sed -i -E 's/\x27/"/g'
+inside /tmp/pytest... after a test run
+"""
 
 debug = False
 
@@ -97,21 +103,17 @@ def test_walk(folder, name, data_path):
 
     # run
     tree, forbidden = aw.walk(path)
-    listing = al.tree_to_listing(tree)
 
     # for logging purpose only
     if debug:
         asd.save_json_tree(path, tree, forbidden, start_path=data_path)
-        asd.save_json_listing(path, listing, start_path=data_path)
         reset_folder_time(path)
 
     # load expected
     expected_tree = asd.load_json_tree(
         path / '.alfeios_expected' / 'tree.json', start_path=data_path)
-    expected_listing = al.tree_to_listing(expected_tree)
 
     # verify
-    assert listing == expected_listing
     assert tree == expected_tree
     assert forbidden == {}
 
@@ -122,94 +124,21 @@ def test_walk_with_exclusions(data_path):
 
     # run
     tree, forbidden = aw.walk(path, exclusion=exclusion)
-    listing = al.tree_to_listing(tree)
 
     # for logging purpose only
     if debug:
         asd.save_json_tree(path, tree, forbidden, start_path=data_path,
                            prefix='with_exclusions_')
-        asd.save_json_listing(path, listing, start_path=data_path,
-                              prefix='with_exclusions_')
         reset_folder_time(path)
 
     # load expected
     expected_tree = asd.load_json_tree(
         path / '.alfeios_expected' / 'tree_with_exclusions.json',
         start_path=data_path)
-    expected_listing = al.tree_to_listing(expected_tree)
 
     # verify
-    assert listing == expected_listing
     assert tree == expected_tree
     assert forbidden == {}
-
-
-def test_unify(data_path):
-    path0 = data_path / 'Folder0'
-    path8 = data_path / 'Folder8'
-
-    # run
-    tree0, forbidden0 = aw.walk(path0)
-    listing0 = al.tree_to_listing(tree0)
-
-    tree8, forbidden8 = aw.walk(path8)
-    listing8 = al.tree_to_listing(tree8)
-
-    listing, tree, forbidden = al.unify([listing0, listing8],
-                                        [tree0, tree8],
-                                        [forbidden0, forbidden8])
-
-    # for logging purpose only
-    if debug:
-        asd.save_json_tree(data_path, tree, forbidden, start_path=data_path,
-                           prefix='with_exclusions_')
-        asd.save_json_listing(data_path, listing, start_path=data_path,
-                              prefix='with_exclusions_')
-        reset_folder_time(data_path)
-
-    # load expected
-    expected_tree = asd.load_json_tree(
-        data_path / '.alfeios_expected' / 'tree_0_8.json',
-        start_path=data_path)
-    expected_listing = al.tree_to_listing(expected_tree)
-
-    # verify
-    assert listing == expected_listing
-    assert tree == expected_tree
-    assert forbidden == {}
-
-
-def test_unify_with_exclusion(data_path):
-    path = data_path / 'Folder0'
-
-    # run
-    tree0_no3, forbidden0_no3 = aw.walk(path, exclusion={'Folder3'})
-    listing0_no3 = al.tree_to_listing(tree0_no3)
-
-    tree3, forbidden3 = aw.walk(path / 'Folder3')
-    listing3 = al.tree_to_listing(tree3)
-
-    listing_uni, tree_uni, forbid_uni = al.unify([listing0_no3, listing3],
-                                                 [tree0_no3, tree3],
-                                                 [forbidden0_no3, forbidden3])
-
-    tree0_full, forbidden0_full = aw.walk(path)
-    listing0_full = al.tree_to_listing(tree0_full)
-
-    # remove the root folder record
-    # as the run with exclusion does not give the full size and hash
-    # normally the unification is on separate folders
-    listing_uni.pop(('7e472b2b54ba97314c63988db267d125', 'DIR', 2698920))
-    listing0_full.pop(('4f8c48630a797715e8b86466e0218aa1', 'DIR', 3598557))
-    tree_uni = {pointer: content for pointer, content in tree_uni.items()
-                if pointer[at.PATH] != data_path / 'Folder0'}
-    tree0_full = {pointer: content for pointer, content in tree0_full.items()
-                  if pointer[at.PATH] != data_path / 'Folder0'}
-
-    # verify
-    assert listing_uni == listing0_full
-    assert tree_uni == tree0_full
-    assert forbid_uni == forbidden0_full
 
 
 def test_duplicate(data_path):

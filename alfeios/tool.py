@@ -1,23 +1,14 @@
-import enum
 import os
 import os.path
 import pathlib
+import shutil
 import time
 import zipfile
 
-# Content data
-HASH = 0   # content md5 hashcode
-TYPE = 1   # content type : PathType.FILE or PathType.DIR
-SIZE = 2   # content size in bytes
 
-# Pointer data
-PATH = 0   # filesystem path
-MTIME = 1  # last modification time
-
-
-class PathType(str, enum.Enum):
-    FILE = 'FILE'
-    DIR = 'DIR'
+def is_compressed_file(path):
+    return path.is_file() and path.suffix in ['.zip', '.tar', '.gztar',
+                                              '.bztar', '.xztar']
 
 
 def build_relative_path(absolute_path, start_path):
@@ -46,3 +37,8 @@ def restore_mtime_after_unpack(archive, extract_dir):
         else:
             mtime = archive_mtime
         os.utime(file, (mtime, mtime))
+
+
+def unpack_archive_and_restore_mtime(path, extract_dir):
+    shutil.unpack_archive(path, extract_dir=extract_dir)
+    restore_mtime_after_unpack(path, extract_dir=extract_dir)

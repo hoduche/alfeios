@@ -1,6 +1,15 @@
 import collections
 
-from alfeios import tool as at
+import alfeios.walker as aw
+
+# Content data
+HASH = 0   # content md5 hashcode
+TYPE = 1   # content type : PathType.FILE or PathType.DIR
+SIZE = 2   # content size in bytes
+
+# Pointer data
+PATH = 0   # filesystem path
+MTIME = 1  # last modification time
 
 
 def tree_to_listing(tree):
@@ -19,27 +28,29 @@ def tree_to_listing(tree):
     """
 
     listing = collections.defaultdict(set)
-    for pointer, content in tree.items():
+    for k, v in tree.items():
+        content = (v[aw.HASH], v[aw.TYPE], v[aw.SIZE])
+        pointer = (k, v[aw.MTIME])
         listing[content].add(pointer)
     return listing
 
 
 def listing_to_tree(listing):
     tree = dict()
-    for content, pointers in listing.items():
+    for k, pointers in listing.items():
         for pointer in pointers:
-            tree[pointer] = content
+            tree[pointer[PATH]] = (k[HASH], k[TYPE], k[SIZE], pointer[MTIME])
     return tree
 
 
 def get_duplicate(listing):
     duplicate = {content: pointers for content, pointers in listing.items()
                  if len(pointers) >= 2}
-    size_gain = sum([content[at.SIZE] * (len(pointers) - 1)
+    size_gain = sum([content[aw.SIZE] * (len(pointers) - 1)
                      for content, pointers in duplicate.items()])
     duplicate_sorted_by_size = {content: pointers for (content, pointers)
                                 in sorted(duplicate.items(),
-                                          key=lambda item: item[0][at.SIZE],
+                                          key=lambda item: item[0][aw.SIZE],
                                           reverse=True)}
     result = collections.defaultdict(set, duplicate_sorted_by_size)
     return result, size_gain
@@ -50,28 +61,3 @@ def get_missing(old_listing, new_listing):
                     in old_listing.items() if content not in new_listing}
     result = collections.defaultdict(set, non_included)
     return result
-
-
-def unify(listings, trees, forbiddens):
-    # {(pathlib.Path, int): (hash-code, path-type, int)}
-    unified_tree = dict()
-    for tree in trees:
-        for pointer, content in tree.items():
-            if (pointer not in unified_tree) or \
-                    (unified_tree[pointer][at.SIZE] < content[at.SIZE]):
-                unified_tree[pointer] = content
-
-    # {(hash-code, path-type, int): {(pathlib.Path, int)}}
-    unified_listing = collections.defaultdict(set)
-    for each_listing in listings:
-        for content, pointers in each_listing.items():
-            for pointer in pointers:
-                if unified_tree[pointer] == content:
-                    unified_listing[content].add(pointer)
-
-    # {pathlib.Path: Exception}
-    forbidden = dict()
-    for each_forbidden in forbiddens:
-        forbidden.update(each_forbidden)
-
-    return unified_listing, unified_tree, forbidden

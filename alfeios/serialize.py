@@ -6,7 +6,9 @@ import json
 import pathlib
 import tempfile
 
+import alfeios.listing as al
 import alfeios.tool as at
+import alfeios.walker as aw
 
 
 def save_json_tree(dir_path, tree, forbidden=None, start_path=None, prefix=''):
@@ -17,12 +19,11 @@ def save_json_tree(dir_path, tree, forbidden=None, start_path=None, prefix=''):
 
     Args:
         dir_path (pathlib.Path): path to the directory where the index will be
-        saved (in a .alfeios subdirectory)
-        tree (dict = {(pathlib.Path, int): (hash, type, int)}):
-             tree to serialize
-        forbidden (dict =
-                  {pathlib.Path: type(Exception)}):
-                  forbidden to serialize
+            saved (in a .alfeios subdirectory)
+        tree (dict = {pathlib.Path: (hash, type, int, int)}):
+            tree to serialize
+        forbidden (dict = {pathlib.Path: type(Exception)}):
+            forbidden to serialize
         start_path (pathlib.Path): start path to remove from each path in the
                                    json serialized index
         prefix (str): prefix to prepend to index json files
@@ -38,11 +39,34 @@ def save_json_tree(dir_path, tree, forbidden=None, start_path=None, prefix=''):
     tag = datetime.datetime.now().strftime('%Y_%m_%d_%H_%M_%S_') + prefix
 
     _save_json_tree(tree, path / (tag + 'tree.json'), start_path)
-    if forbidden is not None:
+    if len(forbidden) > 0:
         _save_json_forbidden(forbidden, path / (tag + 'forbidden.json'),
                              start_path)
 
     return tag
+
+
+def load_json_tree(file_path, start_path=None):
+    """
+    Args:
+        file_path (pathlib.Path): path to an existing json serialized tree
+        start_path (pathlib.Path): start path to prepend to each relative path
+                                   in the tree
+
+    Returns:
+        dict = {pathlib.Path: (hash, type, int, int)}
+    """
+
+    text_tree = file_path.read_text()
+    json_tree = json.loads(text_tree)
+    tree = {pathlib.Path(path): (content[aw.HASH],
+                                 aw.PathType(content[aw.TYPE]),
+                                 content[aw.SIZE],
+                                 content[aw.MTIME])
+            for path, content in json_tree.items()}
+    if start_path is not None:
+        tree = {start_path / path: content for path, content in tree.items()}
+    return tree
 
 
 def save_json_listing(dir_path, listing, start_path=None, prefix=''):
@@ -52,8 +76,8 @@ def save_json_listing(dir_path, listing, start_path=None, prefix=''):
     as first argument
 
     Args:
-        dir_path (pathlib.Path): path to the directory where the index will be
-        saved (in a .alfeios subdirectory)
+        dir_path (pathlib.Path): path to the directory where the listing will be
+            saved (in a .alfeios subdirectory)
         listing (collections.defaultdict(set) =
                 {(hash, type, int): {(pathlib.Path, int)}}):
                 listing to serialize
@@ -95,77 +119,27 @@ def load_json_listing(file_path, start_path=None):
     dict_listing = {ast.literal_eval(content): pointers
                     for content, pointers in json_listing.items()}
     # we then cast the text elements into their expected types
-    dict_listing = {(content[at.HASH],
-                     at.PathType(content[at.TYPE]),
-                     content[at.SIZE]): {(pathlib.Path(pointer[at.PATH]),
-                                          pointer[at.MTIME])
+    dict_listing = {(content[al.HASH],
+                     aw.PathType(content[al.TYPE]),
+                     content[al.SIZE]): {(pathlib.Path(pointer[al.PATH]),
+                                          pointer[al.MTIME])
                                          for pointer in pointers}
                     for content, pointers in dict_listing.items()}
     if start_path is not None:
-        dict_listing = {content: {(start_path / pointer[at.PATH],
-                                   pointer[at.MTIME])
+        dict_listing = {content: {(start_path / pointer[al.PATH],
+                                   pointer[al.MTIME])
                                   for pointer in pointers}
                         for content, pointers in dict_listing.items()}
     listing = collections.defaultdict(set, dict_listing)
     return listing
 
 
-def load_json_tree(file_path, start_path=None):
-    """
-    Args:
-        file_path (pathlib.Path): path to an existing json serialized tree
-        start_path (pathlib.Path): start path to prepend to each relative path
-                                   in the tree
-
-    Returns:
-        dict = {(pathlib.Path, int): (hash, type, int)}
-    """
-
-    text_tree = file_path.read_text()
-    json_tree = json.loads(text_tree)
-    # ast.literal_eval allows transforming a string into a tuple
-    tree = {ast.literal_eval(pointer): content
-            for pointer, content in json_tree.items()}
-    # we then cast the text elements into their expected types
-    tree = {(pathlib.Path(pointer[at.PATH]),
-             pointer[at.MTIME]): (content[at.HASH],
-                                  at.PathType(content[at.TYPE]),
-                                  content[at.SIZE])
-            for pointer, content in tree.items()}
-    if start_path is not None:
-        tree = {(start_path / pointer[at.PATH],
-                 pointer[at.MTIME]): content
-                for pointer, content in tree.items()}
-    return tree
-
-
-def _save_json_listing(listing, file_path, start_path=None):
-    if start_path is not None:
-        listing = {content: {
-            (at.build_relative_path(pointer[at.PATH], start_path),
-             pointer[at.MTIME])
-            for pointer in pointers}
-            for content, pointers in listing.items()}
-    serializable_listing = {
-        str((content[at.HASH], json.dumps(content[at.TYPE])[1:-1],
-             content[at.SIZE])): [
-            [str(pathlib.PurePosixPath(pointer[at.PATH])), pointer[at.MTIME]]
-            for pointer in pointers]
-        for content, pointers in listing.items()}
-    json_listing = json.dumps(serializable_listing)
-    _write_text(json_listing, file_path)
-
-
 def _save_json_tree(tree, file_path, start_path=None):
     if start_path is not None:
-        tree = {
-            (at.build_relative_path(pointer[at.PATH], start_path),
-             pointer[at.MTIME]): content
-            for pointer, content in tree.items()}
-    serializable_tree = {
-        str((str(pathlib.PurePosixPath(pointer[at.PATH])), pointer[at.MTIME])):
-            list(content)
-        for pointer, content in tree.items()}
+        tree = {at.build_relative_path(path, start_path): content
+                for path, content in tree.items()}
+    serializable_tree = {str(pathlib.PurePosixPath(path)): list(content)
+                         for path, content in tree.items()}
     json_tree = json.dumps(serializable_tree)
     _write_text(json_tree, file_path)
 
@@ -178,6 +152,22 @@ def _save_json_forbidden(forbidden, file_path, start_path=None):
                               for path_key, excep in forbidden.items()}
     json_forbidden = json.dumps(serializable_forbidden)
     _write_text(json_forbidden, file_path)
+
+
+def _save_json_listing(listing, file_path, start_path=None):
+    if start_path is not None:
+        listing = {content: {
+            (at.build_relative_path(pointer[al.PATH], start_path),
+             pointer[al.MTIME]) for pointer in pointers}
+            for content, pointers in listing.items()}
+    serializable_listing = {
+        str((content[al.HASH], json.dumps(content[al.TYPE])[1:-1],
+             content[al.SIZE])): [
+            [str(pathlib.PurePosixPath(pointer[al.PATH])), pointer[al.MTIME]]
+            for pointer in pointers]
+        for content, pointers in listing.items()}
+    json_listing = json.dumps(serializable_listing)
+    _write_text(json_listing, file_path)
 
 
 def _write_text(content_string, file_path):
