@@ -1,9 +1,28 @@
+import datetime
+import enum
 import os
 import os.path
 import pathlib
 import shutil
 import time
 import zipfile
+
+
+DATE_FORMAT = '%Y_%m_%d_%H_%M_%S'
+
+
+class PathType(str, enum.Enum):
+    FILE = 'FILE'
+    DIR = 'DIR'
+
+
+def get_path_type(path):
+    if path.is_file():
+        return PathType.FILE
+    elif path.is_dir():
+        return PathType.DIR
+    else:
+        assert "Oups"  # todo check if pythonic
 
 
 def is_compressed_file(path):
@@ -13,6 +32,18 @@ def is_compressed_file(path):
 
 def build_relative_path(absolute_path, start_path):
     return pathlib.Path(os.path.relpath(str(absolute_path), start=start_path))
+
+
+def build_datetime_tag(datetime_object):
+    return datetime_object.strftime(DATE_FORMAT)
+
+
+def build_current_datetime_tag():
+    return build_datetime_tag(datetime.datetime.now())
+
+
+def read_datetime_tag(datetime_string):
+    return datetime.datetime.strptime(datetime_string, DATE_FORMAT)
 
 
 def natural_size(num, unit='B'):
@@ -25,7 +56,7 @@ def natural_size(num, unit='B'):
     return result
 
 
-def restore_mtime_after_unpack(archive, extract_dir):
+def _restore_mtime_after_unpack(archive, extract_dir):
     archive_mtime = archive.stat().st_mtime
     os.utime(extract_dir, (archive_mtime, archive_mtime))
     info_map = {f.filename: f.date_time
@@ -41,4 +72,6 @@ def restore_mtime_after_unpack(archive, extract_dir):
 
 def unpack_archive_and_restore_mtime(path, extract_dir):
     shutil.unpack_archive(path, extract_dir=extract_dir)
-    restore_mtime_after_unpack(path, extract_dir=extract_dir)
+    _restore_mtime_after_unpack(path, extract_dir=extract_dir)
+
+

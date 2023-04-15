@@ -1,4 +1,3 @@
-import enum
 import hashlib
 import pathlib
 import shutil
@@ -8,22 +7,19 @@ import alfeios.tool as at
 
 # TODO:
 """
-An attempt to build the index as a tree only.
-This should simplify the code without loosing in performance or functionality.
-Maybe to start with we could do :
-- key = path
-- value = (type, size, hash, mtime)
-
 Here are the  different options to simple walk:
-- walk inside compressed files: Yes, No
-- write result inside root folder: Yes, No
-- hash results: Yes, No
+
 - use last result hashes if path, type, mtime and size are unchanged: Yes, No
+- hash results: Yes, No
+
 - find previous result inside or outside root folder: Yes, No
-- handle progress bar (interface implemented by tqdm): Yes, No
-- handle results in color (interface implemented by colorama): Yes, No
+- walk inside compressed files: Yes, No
 - hash directories: Yes, No
 
+- handle progress bar (interface implemented by tqdm): Yes, No
+- handle results in color (interface implemented by colorama): Yes, No
+
+- write result inside root folder: Yes, No
 """
 
 # Content data
@@ -33,12 +29,7 @@ SIZE = 2  # content size in bytes
 MTIME = 3  # last modification time
 
 
-class PathType(str, enum.Enum):
-    FILE = 'FILE'
-    DIR = 'DIR'
-
-
-def walk(path, exclusion=None, should_hash=True, pbar=None):
+def walk(path, exclusion=None, cache=None, should_hash=True, pbar=None):
     """ Recursively walks through a root directory to index its content
 
     It manages two data structures:
@@ -55,6 +46,8 @@ def walk(path, exclusion=None, should_hash=True, pbar=None):
     Args:
         path (pathlib.Path): path to the root directory to parse
         exclusion (set of str): set of directories and files not to parse
+        cache (tree): previous result to be used as cache to avoid re-hashing
+                      if path, type, mtime and size are unchanged
         should_hash (bool): flag to hash content or not
         pbar (object): progress bar that must implement the interface:
             * update()       - mandatory
@@ -69,16 +62,30 @@ def walk(path, exclusion=None, should_hash=True, pbar=None):
         exclusion = set()
     exclusion.update(['.alfeios', '.alfeios_expected'])
 
+    if cache is None:  # todo check if this is pythonic
+        cache = dict()
+
     tree = dict()
     forbidden = dict()
 
-    #    path = path.resolve()
-    _recursive_walk(path, tree, forbidden, exclusion, should_hash, pbar)
+    #    path = path.resolve()  # todo remove if not used (understand before)
+    _recursive_walk(path, tree, forbidden, cache, exclusion, should_hash, pbar)
 
     return tree, forbidden
 
 
-def _recursive_walk(path, tree, forbidden, exclusion, should_hash, pbar):
+def _recursive_walk(path, tree, forbidden, cache, exclusion, should_hash, pbar):
+
+    # CASE 0: path is in cache
+    # --------------------------------------------------
+    if path in cache:
+        cached_content = cache[path]
+        stat = path.stat()
+        if at.get_path_type(path) == cached_content[TYPE] and \
+                stat.st_size == cached_content[SIZE] and \
+                stat.st_mtime == cached_content[MTIME]:
+            tree[path] = cached_content
+            return
 
     # CASE 1: path is a directory
     # --------------------------------------------------
@@ -88,7 +95,7 @@ def _recursive_walk(path, tree, forbidden, exclusion, should_hash, pbar):
         for child in path.iterdir():
             try:
                 if child.name not in exclusion and not child.is_symlink():
-                    _recursive_walk(child, tree, forbidden,
+                    _recursive_walk(child, tree, forbidden, cache,
                                     exclusion, should_hash, pbar)
                     if child not in forbidden:
                         # by construction of the recursion
@@ -103,7 +110,7 @@ def _recursive_walk(path, tree, forbidden, exclusion, should_hash, pbar):
             dir_hash = hashlib.md5(concat_hashes.encode()).hexdigest()
         else:
             dir_hash = ''
-        tree[path] = (dir_hash, PathType.DIR, dir_size, path.stat().st_mtime)
+        tree[path] = (dir_hash, at.PathType.DIR, dir_size, path.stat().st_mtime)
 
     # CASE 2: path is a compressed file
     # --------------------------------------------------
@@ -113,7 +120,7 @@ def _recursive_walk(path, tree, forbidden, exclusion, should_hash, pbar):
             at.unpack_archive_and_restore_mtime(path, extract_dir=temp_dir)
             # calls the recursion one step above to create separate output
             # that will be merged afterwards
-            zt, zf = walk(temp_dir, exclusion,
+            zt, zf = walk(temp_dir, exclusion, cache=cache,
                           should_hash=should_hash, pbar=pbar)
             _append_tree(tree, zt, path, temp_dir)
             _append_tree(forbidden, zf, path, temp_dir)
@@ -155,7 +162,7 @@ def _hash_and_index_file(path, tree, should_hash, pbar):
         hash_code = ''
 
     stat = path.stat()
-    tree[path] = (hash_code, PathType.FILE, stat.st_size, stat.st_mtime)
+    tree[path] = (hash_code, at.PathType.FILE, stat.st_size, stat.st_mtime)
 
 
 def _append_tree(tree, additional_tree, start_path, temp_path):

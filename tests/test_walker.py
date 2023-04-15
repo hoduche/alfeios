@@ -17,9 +17,9 @@ find . -type f -name "*tree*.json" | xargs sed -i -E 's/\x27/"/g'
 inside /tmp/pytest... after a test run
 """
 
-debug = False
+debug = True
 
-tests_data_path = pathlib.Path(__file__).parent / 'data'
+tests_data = pathlib.Path(__file__).parent / 'data' / 'data.tar.gz'
 
 folders = ['Folder9',  # only one file
            'Folder0',  # complete use case without zip files
@@ -69,7 +69,7 @@ def log_sorted_json_tree(file_path):
 @pytest.fixture(scope="module", autouse=True)
 def data_path(tmp_path_factory):
     # setup once for all tests
-    tar = tarfile.open(tests_data_path / 'data.tar.gz')
+    tar = tarfile.open(tests_data)
     tmp_path = tmp_path_factory.mktemp('data')
     tar.extractall(tmp_path)
     tar.close()
@@ -118,6 +118,12 @@ def test_walk(folder, name, data_path):
     assert forbidden == {}
 
 
+def test_walk_with_cache(data_path):  # todo real implementation
+    path = data_path / 'FolderWithCache'
+    if not pathlib.Path(path).is_dir():
+        pathlib.Path(path).mkdir()
+
+
 def test_walk_with_exclusions(data_path):
     path = data_path / 'Folder0'
     exclusion = {'Folder3', 'Folder4_1', 'file3.txt', 'groundhog.png'}
@@ -127,8 +133,8 @@ def test_walk_with_exclusions(data_path):
 
     # for logging purpose only
     if debug:
-        asd.save_json_tree(path, tree, forbidden, start_path=data_path,
-                           prefix='with_exclusions_')
+        f = asd.save_json_tree(path, tree, forbidden, start_path=data_path)
+        f.rename(f.with_stem(f.stem + '_with_exclusions'))
         reset_folder_time(path)
 
     # load expected
@@ -151,8 +157,8 @@ def test_duplicate(data_path):
 
     # for logging purpose only
     if debug:
-        asd.save_json_listing(path, duplicate_listing, start_path=data_path,
-                              prefix='duplicate_')
+        f = asd.save_json_listing(path, duplicate_listing, start_path=data_path)
+        f.rename(f.with_stem(f.stem + '_duplicate'))
         reset_folder_time(path)
 
     # load expected
@@ -173,9 +179,9 @@ def test_duplicate_with_zip(data_path):
 
     # for logging purpose only
     if debug:
-        asd.save_json_listing(data_path, duplicate_listing,
-                              start_path=data_path,
-                              prefix='duplicate_with_zip_')
+        f = asd.save_json_listing(data_path, duplicate_listing,
+                                  start_path=data_path)
+        f.rename(f.with_stem(f.stem + '_duplicate_with_zip'))
         reset_folder_time(data_path)
 
     # verify
@@ -205,8 +211,8 @@ def test_missing_fully_included(data_path):
 
     # for logging purpose only
     if debug:
-        asd.save_json_listing(path, missing_listing, start_path=data_path,
-                              prefix='missing_fully_included_')
+        f = asd.save_json_listing(path, missing_listing, start_path=data_path)
+        f.rename(f.with_stem(f.stem + '_missing_fully_included'))
         reset_folder_time(path)
 
     # verify
@@ -227,8 +233,8 @@ def test_missing_not_fully_included(data_path):
 
     # for logging purpose only
     if debug:
-        asd.save_json_listing(path, missing_listing, start_path=data_path,
-                              prefix='missing_not_fully_included_')
+        f = asd.save_json_listing(path, missing_listing, start_path=data_path)
+        f.rename(f.with_stem(f.stem + '_missing_not_fully_included'))
         reset_folder_time(path)
 
     # load expected
