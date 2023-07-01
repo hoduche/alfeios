@@ -12,7 +12,7 @@ import alfeios.walker as aw
 
 def save_json_tree(dir_path, tree, forbidden=None, start_path=None):
     """
-    Save the 2 data structures of the index (tree and  forbidden) as json files,
+    Save the 2 data structures of the index (tree and  forbidden) as json files
     tagged with the current date and time, in a .alfeios subdirectory,
     inside the directory passed as first argument
 
@@ -98,8 +98,8 @@ def save_json_listing(dir_path, listing, start_path=None):
     in a .alfeios subdirectory, inside the directory passed as first argument
 
     Args:
-        dir_path (pathlib.Path): path to the directory where the listing will be
-            saved (in a .alfeios subdirectory)
+        dir_path (pathlib.Path): path to the directory where the listing will
+            be saved (in a .alfeios subdirectory)
         listing (collections.defaultdict(set) =
                 {(hash, type, int): {(pathlib.Path, int)}}):
                 listing to serialize

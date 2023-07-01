@@ -104,7 +104,7 @@ def missing(old_path, new_path, exclusion=None, use_cache=True,
       directory, the corresponding tree is deserialized from the json file
       instead of being generated, which is significantly quicker but of course
       less up to date
-    - Can save the tree.json and forbidden.json files in the 2  root directories
+    - Can save the tree.json and forbidden.json files in the 2 root directories
     - In case of no write access to the new root directory, the output files
       are saved in a temp directory of the filesystem with a unique identifier
 

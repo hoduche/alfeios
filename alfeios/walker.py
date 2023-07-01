@@ -74,7 +74,8 @@ def walk(path, exclusion=None, cache=None, should_hash=True, pbar=None):
     return tree, forbidden
 
 
-def _recursive_walk(path, tree, forbidden, cache, exclusion, should_hash, pbar):
+def _recursive_walk(path, tree, forbidden, cache, exclusion, should_hash,
+                    pbar):
 
     # CASE 0: path is in cache
     # --------------------------------------------------
@@ -110,7 +111,8 @@ def _recursive_walk(path, tree, forbidden, cache, exclusion, should_hash, pbar):
             dir_hash = hashlib.md5(concat_hashes.encode()).hexdigest()
         else:
             dir_hash = ''
-        tree[path] = (dir_hash, at.PathType.DIR, dir_size, path.stat().st_mtime)
+        tree[path] = (dir_hash, at.PathType.DIR, dir_size,
+                      path.stat().st_mtime)
 
     # CASE 2: path is a compressed file
     # --------------------------------------------------
@@ -126,7 +128,8 @@ def _recursive_walk(path, tree, forbidden, cache, exclusion, should_hash, pbar):
             _append_tree(forbidden, zf, path, temp_dir)
         except (shutil.ReadError, OSError, Exception) as e:
             forbidden[path] = type(e)
-            _hash_and_index_file(path, tree, should_hash=should_hash, pbar=pbar)
+            _hash_and_index_file(path, tree, should_hash=should_hash,
+                                 pbar=pbar)
         finally:
             shutil.rmtree(temp_dir)
 

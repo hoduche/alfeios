@@ -77,6 +77,3 @@ def _restore_mtime_after_unpack(archive, extract_dir):
         else:
             mtime = archive_mtime
         os.utime(file, (mtime, mtime))
-
-
-
