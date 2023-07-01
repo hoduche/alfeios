@@ -10,8 +10,9 @@ import alfeios.tool as at
 import alfeios.walker as aw
 
 
-def index(path, exclusion=None, use_cache=True):
+def index(path, exclusion=None, no_cache=False):
     """
+
     - Index all file and directory contents in a root directory
       including the inside of zip, tar, gztar, bztar and xztar compressed files
     - Contents are identified by their hash-code, path-type (file or directory)
@@ -25,12 +26,12 @@ def index(path, exclusion=None, use_cache=True):
     Args:
         path (str or pathlib.Path): path to the root directory
         exclusion (set of str): set of directories and files not to consider
-        use_cache: boolean to decide if we should use cache when it exists
+        no_cache: boolean to decide if we should use cache when it exists
     """
 
     path = pathlib.Path(path)
     if path.is_dir():
-        cache = asd.load_last_json_tree(path) if use_cache else dict()
+        cache = dict() if no_cache else asd.load_last_json_tree(path)
         tree, forbidden = _walk_with_progressbar(path, exclusion=exclusion,
                                                  cache=cache)
         asd.save_json_tree(path, tree, forbidden)
@@ -40,8 +41,9 @@ def index(path, exclusion=None, use_cache=True):
         return
 
 
-def duplicate(path, exclusion=None, use_cache=True, save_index=False):
+def duplicate(path, exclusion=None, no_cache=False, save_index=False):
     """
+
     - List all duplicated files and directories in a root directory
     - Save result as a duplicate_listing.json file in the root directory
     - Print the potential space gain
@@ -57,7 +59,7 @@ def duplicate(path, exclusion=None, use_cache=True, save_index=False):
         path (str or pathlib.Path): path to the root directory to parse or the
                                     tree.json file to deserialize
         exclusion (set of str): set of directories and files not to consider
-        use_cache: boolean to decide if we should use cache when it exists
+        no_cache: boolean to decide if we should use cache when it exists
         save_index (bool): flag to save the tree.json and forbidden.json files
                            in the root directory
                            default is False
@@ -69,7 +71,7 @@ def duplicate(path, exclusion=None, use_cache=True, save_index=False):
         # todo fragile hypothesis that this is inside an .alfeios directory
         path = path.parent.parent
     elif path.is_dir():
-        cache = asd.load_last_json_tree(path) if use_cache else dict()
+        cache = dict() if no_cache else asd.load_last_json_tree(path)
         tree, forbidden = _walk_with_progressbar(path, exclusion=exclusion,
                                                  cache=cache)
         if save_index:
@@ -93,9 +95,10 @@ def duplicate(path, exclusion=None, use_cache=True, save_index=False):
               'Congratulations there is no duplicate here')
 
 
-def missing(old_path, new_path, exclusion=None, use_cache=True,
+def missing(old_path, new_path, exclusion=None, no_cache=False,
             save_index=False):
     """
+
     - List all files and directories that are present in an old root directory
       and that are missing in a new one
     - Save result as a missing_listing.json file in the new root directory
@@ -114,7 +117,7 @@ def missing(old_path, new_path, exclusion=None, use_cache=True,
         new_path (str or pathlib.Path): path to the new root directory to parse
                                         or the tree.json file to deserialize
         exclusion (set of str): set of directories and files not to consider
-        use_cache: boolean to decide if we should use cache when it exists
+        no_cache: boolean to decide if we should use cache when it exists
         save_index (bool): flag to save the tree.json and forbidden.json files
                            in the 2 root directories
                            default is False
@@ -124,7 +127,7 @@ def missing(old_path, new_path, exclusion=None, use_cache=True,
     if old_path.is_file() and old_path.name.endswith('_tree.json'):
         old_tree = asd.load_json_tree(old_path)
     elif old_path.is_dir():
-        old_cache = asd.load_last_json_tree(old_path) if use_cache else dict()
+        old_cache = dict() if no_cache else asd.load_last_json_tree(old_path)
         old_tree, old_forbidden = _walk_with_progressbar(old_path,
                                                          exclusion=exclusion,
                                                          cache=old_cache)
@@ -141,7 +144,7 @@ def missing(old_path, new_path, exclusion=None, use_cache=True,
         # todo fragile hypothesis that this is inside an .alfeios directory
         new_path = new_path.parent.parent
     elif new_path.is_dir():
-        new_cache = asd.load_last_json_tree(new_path) if use_cache else dict()
+        new_cache = dict() if no_cache else asd.load_last_json_tree(new_path)
         new_tree, new_forbidden = _walk_with_progressbar(new_path,
                                                          exclusion=exclusion,
                                                          cache=new_cache)

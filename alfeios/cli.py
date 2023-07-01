@@ -34,10 +34,10 @@ def main():
     parser_i = subparsers_factory.add_parser(
         func=alfeios.api.index,
         aliases=['idx', 'i'],
-        help='Index content of a root directory',
+        help='index content of a root directory',
         epilog='''example:
   alfeios index
-  alfeios idx D:/Pictures
+  alfeios idx -n D:/Pictures
   alfeios i
 ''',
         formatter_class=dsargparse.RawTextHelpFormatter
@@ -48,15 +48,19 @@ def main():
         help='path to the root directory'
              ' - default is current working directory'
     )
+    parser_i.add_argument(
+        '-n', '--no-cache', action='store_true',
+        help='do not use cache already saved in .alfeios directory'
+    )
 
     # create the parser for the duplicate command
     parser_d = subparsers_factory.add_parser(
         func=alfeios.api.duplicate,
         aliases=['dup', 'd'],
-        help='Find duplicate content in a root directory',
+        help='find duplicate content in a root directory',
         epilog='''example:
   alfeios duplicate
-  alfeios dup -s D:/Pictures
+  alfeios dup -ns D:/Pictures
   alfeios d D:/Pictures/.alfeios/2020_01_29_10_29_39_listing.json
 ''',
         formatter_class=dsargparse.RawTextHelpFormatter
@@ -68,20 +72,23 @@ def main():
              'default is current working directory'
     )
     parser_d.add_argument(
+        '-n', '--no-cache', action='store_true',
+        help='do not use cache already saved in .alfeios directory'
+    )
+    parser_d.add_argument(
         '-s', '--save-index', action='store_true',
-        help='save the listing.json, tree.json and forbidden.json files in the'
-             ' root directory'
+        help='save tree.json and forbidden.json files in the root directory'
     )
 
     # create the parser for the missing command
     parser_m = subparsers_factory.add_parser(
         func=alfeios.api.missing,
         aliases=['mis', 'm'],
-        help='Find missing content in a new root directory from an old root'
+        help='find missing content in a new root directory from an old root'
              ' directory',
         epilog='''examples:
   alfeios missing D:/Pictures E:/AllPictures
-  alfeios mis -s D:/Pictures E:/AllPictures
+  alfeios mis -ns D:/Pictures E:/AllPictures
   alfeios m D:/Pictures/.alfeios/2020_01_29_10_29_39_listing.json E:/AllPics
 ''',
         formatter_class=dsargparse.RawTextHelpFormatter
@@ -95,9 +102,13 @@ def main():
         help='path to the new root directory (or new listing.json)'
     )
     parser_m.add_argument(
+        '-n', '--no-cache', action='store_true',
+        help='do not use cache already saved in the 2 .alfeios directories'
+    )
+    parser_m.add_argument(
         '-s', '--save-index', action='store_true',
-        help='save the listing.json, tree.json and forbidden.json files in the'
-             ' 2 root directories'
+        help='save the tree.json and forbidden.json files in the 2 root'
+             ' directories'
     )
 
     # parse command line and call appropriate function
