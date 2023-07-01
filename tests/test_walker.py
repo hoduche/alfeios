@@ -8,6 +8,7 @@ import pytest
 
 import alfeios.listing as al
 import alfeios.serialize as asd
+import alfeios.tool as at
 import alfeios.walker as aw
 
 """
@@ -134,7 +135,7 @@ def test_walk_with_exclusions(data_path):
     # for logging purpose only
     if debug:
         f = asd.save_json_tree(path, tree, forbidden, start_path=data_path)
-        f.rename(f.with_stem(f.stem + '_with_exclusions'))
+        f = at.add_suffix(f, '_with_exclusions')
         reset_folder_time(path)
 
     # load expected
@@ -158,7 +159,7 @@ def test_duplicate(data_path):
     # for logging purpose only
     if debug:
         f = asd.save_json_listing(path, duplicate_listing, start_path=data_path)
-        f.rename(f.with_stem(f.stem + '_duplicate'))
+        f = at.add_suffix(f, '_duplicate')
         reset_folder_time(path)
 
     # load expected
@@ -181,7 +182,7 @@ def test_duplicate_with_zip(data_path):
     if debug:
         f = asd.save_json_listing(data_path, duplicate_listing,
                                   start_path=data_path)
-        f.rename(f.with_stem(f.stem + '_duplicate_with_zip'))
+        f = at.add_suffix(f, '_duplicate_with_zip')
         reset_folder_time(data_path)
 
     # verify
@@ -212,7 +213,7 @@ def test_missing_fully_included(data_path):
     # for logging purpose only
     if debug:
         f = asd.save_json_listing(path, missing_listing, start_path=data_path)
-        f.rename(f.with_stem(f.stem + '_missing_fully_included'))
+        f = at.add_suffix(f, '_missing_fully_included')
         reset_folder_time(path)
 
     # verify
@@ -234,7 +235,7 @@ def test_missing_not_fully_included(data_path):
     # for logging purpose only
     if debug:
         f = asd.save_json_listing(path, missing_listing, start_path=data_path)
-        f.rename(f.with_stem(f.stem + '_missing_not_fully_included'))
+        f = at.add_suffix(f, '_missing_not_fully_included')
         reset_folder_time(path)
 
     # load expected

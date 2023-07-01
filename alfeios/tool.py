@@ -34,6 +34,10 @@ def build_relative_path(absolute_path, start_path):
     return pathlib.Path(os.path.relpath(str(absolute_path), start=start_path))
 
 
+def add_suffix(file_path, suffix):
+    return file_path.rename(file_path.with_stem(file_path.stem + suffix))
+
+
 def build_datetime_tag(datetime_object):
     return datetime_object.strftime(DATE_FORMAT)
 
@@ -56,6 +60,11 @@ def natural_size(num, unit='B'):
     return result
 
 
+def unpack_archive_and_restore_mtime(path, extract_dir):
+    shutil.unpack_archive(path, extract_dir=extract_dir)
+    _restore_mtime_after_unpack(path, extract_dir=extract_dir)
+
+
 def _restore_mtime_after_unpack(archive, extract_dir):
     archive_mtime = archive.stat().st_mtime
     os.utime(extract_dir, (archive_mtime, archive_mtime))
@@ -69,9 +78,5 @@ def _restore_mtime_after_unpack(archive, extract_dir):
             mtime = archive_mtime
         os.utime(file, (mtime, mtime))
 
-
-def unpack_archive_and_restore_mtime(path, extract_dir):
-    shutil.unpack_archive(path, extract_dir=extract_dir)
-    _restore_mtime_after_unpack(path, extract_dir=extract_dir)
 
 

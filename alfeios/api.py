@@ -84,7 +84,7 @@ def duplicate(path, exclusion=None, use_cache=True, save_index=False):
 
     if duplicate_listing:
         f = asd.save_json_listing(path, duplicate_listing)
-        f.rename(f.with_stem(f.stem + '_duplicate'))
+        f = at.add_suffix(f, '_duplicate')
         print(colorama.Fore.GREEN +
               f'You can gain {at.natural_size(size_gain)} '
               f'space by going through {f}')
@@ -157,7 +157,7 @@ def missing(old_path, new_path, exclusion=None, use_cache=True,
     missing_listing = al.get_missing(old_listing, new_listing)
     if missing_listing:
         f = asd.save_json_listing(new_path, missing_listing)
-        f.rename(f.with_stem(f.stem + '_missing'))
+        f = at.add_suffix(f, '_missing')
         print(colorama.Fore.GREEN +
               f'There are {len(missing_listing)} Old files missing in New'
               f' - please go through {f}')
