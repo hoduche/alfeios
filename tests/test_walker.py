@@ -107,7 +107,7 @@ def test_walk(folder, name, data_path):
 
     # for logging purpose only
     if debug:
-        asd.save_json_tree(path, tree, forbidden, start_path=data_path)
+        asd.save_json_tree(path, tree, forbidden)
         reset_folder_time(path)
 
     # load expected
@@ -134,7 +134,7 @@ def test_walk_with_exclusions(data_path):
 
     # for logging purpose only
     if debug:
-        f = asd.save_json_tree(path, tree, forbidden, start_path=data_path)
+        f = asd.save_json_tree(path, tree, forbidden)
         f = at.add_suffix(f, '_with_exclusions')
         reset_folder_time(path)
 

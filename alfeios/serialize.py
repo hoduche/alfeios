@@ -10,7 +10,7 @@ import alfeios.tool as at
 import alfeios.walker as aw
 
 
-def save_json_tree(dir_path, tree, forbidden=None, start_path=None):
+def save_json_tree(dir_path, tree, forbidden=None):
     """
     Save the 2 data structures of the index (tree and  forbidden) as json files
     tagged with the current date and time, in a .alfeios subdirectory,
@@ -23,8 +23,6 @@ def save_json_tree(dir_path, tree, forbidden=None, start_path=None):
             tree to serialize
         forbidden (dict = {pathlib.Path: type(Exception)}):
             forbidden to serialize
-        start_path (pathlib.Path): start path to remove from each path in the
-                                   json serialized index
 
     Returns:
         pathlib.Path: serialized tree path
@@ -37,11 +35,11 @@ def save_json_tree(dir_path, tree, forbidden=None, start_path=None):
     tag = at.build_current_datetime_tag()
 
     tree_path = path / (tag + '_tree.json')
-    _save_json_tree(tree, tree_path, start_path)
+    _save_json_tree(tree, tree_path)
 
     if len(forbidden) > 0:
         forbidden_path = path / (tag + '_forbidden.json')
-        _save_json_forbidden(forbidden, forbidden_path, start_path)
+        _save_json_forbidden(forbidden, forbidden_path)
 
     return tree_path
 
@@ -154,20 +152,14 @@ def load_json_listing(file_path, start_path=None):
     return listing
 
 
-def _save_json_tree(tree, file_path, start_path=None):
-    if start_path is not None:
-        tree = {at.build_relative_path(path, start_path): content
-                for path, content in tree.items()}
+def _save_json_tree(tree, file_path):
     serializable_tree = {str(pathlib.PurePosixPath(path)): list(content)
                          for path, content in tree.items()}
     json_tree = json.dumps(serializable_tree)
     _write_text(json_tree, file_path)
 
 
-def _save_json_forbidden(forbidden, file_path, start_path=None):
-    if start_path is not None:
-        forbidden = {at.build_relative_path(path_key, start_path): exception
-                     for path_key, exception in forbidden.items()}
+def _save_json_forbidden(forbidden, file_path):
     serializable_forbidden = {str(pathlib.PurePosixPath(path_key)): str(excep)
                               for path_key, excep in forbidden.items()}
     json_forbidden = json.dumps(serializable_forbidden)

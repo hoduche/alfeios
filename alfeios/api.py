@@ -1,3 +1,4 @@
+import os
 import pathlib
 import sys
 
@@ -31,10 +32,12 @@ def index(path, exclusion=None, no_cache=False):
 
     path = pathlib.Path(path)
     if path.is_dir():
+        os.chdir(path)
+        path = pathlib.Path()
         cache = dict() if no_cache else asd.load_last_json_tree(path)
         tree, forbidden = _walk_with_progressbar(path, exclusion=exclusion,
                                                  cache=cache)
-        asd.save_json_tree(path, tree, forbidden, start_path=path.parent)
+        asd.save_json_tree(path, tree, forbidden)
     else:
         print(colorama.Fore.RED + 'This is not a valid path - exiting',
               file=sys.stderr)
@@ -75,7 +78,7 @@ def duplicate(path, exclusion=None, no_cache=False, save_index=False):
         tree, forbidden = _walk_with_progressbar(path, exclusion=exclusion,
                                                  cache=cache)
         if save_index:
-            asd.save_json_tree(path, tree, forbidden, start_path=path.parent)
+            asd.save_json_tree(path, tree, forbidden)
     else:
         print(colorama.Fore.RED + 'This is not a valid path - exiting',
               file=sys.stderr)
@@ -132,8 +135,7 @@ def missing(old_path, new_path, exclusion=None, no_cache=False,
                                                          exclusion=exclusion,
                                                          cache=old_cache)
         if save_index:
-            asd.save_json_tree(old_path, old_tree, old_forbidden,
-                               start_path=old_path.parent)
+            asd.save_json_tree(old_path, old_tree, old_forbidden)
     else:
         print(colorama.Fore.RED + 'Old is not a valid path - exiting',
               file=sys.stderr)
@@ -150,8 +152,7 @@ def missing(old_path, new_path, exclusion=None, no_cache=False,
                                                          exclusion=exclusion,
                                                          cache=new_cache)
         if save_index:
-            asd.save_json_tree(new_path, new_tree, new_forbidden,
-                               start_path=new_path.parent)
+            asd.save_json_tree(new_path, new_tree, new_forbidden)
     else:
         print(colorama.Fore.RED + 'New is not a valid path - exiting',
               file=sys.stderr)
