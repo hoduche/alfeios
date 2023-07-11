@@ -44,12 +44,10 @@ def save_json_tree(dir_path, tree, forbidden=None):
     return tree_path
 
 
-def load_json_tree(file_path, start_path=None):
+def load_json_tree(file_path):
     """
     Args:
         file_path (pathlib.Path): path to an existing json serialized tree
-        start_path (pathlib.Path): start path to prepend to each relative path
-                                   in the tree
 
     Returns:
         dict = {pathlib.Path: (hash, type, int, int)}
@@ -62,8 +60,6 @@ def load_json_tree(file_path, start_path=None):
                                  content[aw.SIZE],
                                  content[aw.MTIME])
             for path, content in json_tree.items()}
-    if start_path is not None:
-        tree = {start_path / path: content for path, content in tree.items()}
     return tree
 
 
@@ -84,13 +80,15 @@ def load_last_json_tree(dir_path):
         times = []
         for tree_path in cache_path.glob('*_tree.json'):
             times.append(at.read_datetime_tag(tree_path.name[:19]))
+        if not times:
+            return dict()
         max_time = max(times)
         max_time_tag = at.build_datetime_tag(max_time)
         last_json_tree = cache_path / (max_time_tag + '_tree.json')
         return load_json_tree(last_json_tree)
 
 
-def save_json_listing(dir_path, listing, start_path=None):
+def save_json_listing(dir_path, listing):
     """
     Save listing as json file, tagged with the current date and time,
     in a .alfeios subdirectory, inside the directory passed as first argument
@@ -101,8 +99,6 @@ def save_json_listing(dir_path, listing, start_path=None):
         listing (collections.defaultdict(set) =
                 {(hash, type, int): {(pathlib.Path, int)}}):
                 listing to serialize
-        start_path (pathlib.Path): start path to remove from each path in the
-                                   json serialized index
 
     Returns:
         pathlib.Path: serialized listing path
@@ -113,18 +109,16 @@ def save_json_listing(dir_path, listing, start_path=None):
         pathlib.Path(path).mkdir()
 
     listing_path = path / (at.build_current_datetime_tag() + '_listing.json')
-    _save_json_listing(listing, listing_path, start_path)
+    _save_json_listing(listing, listing_path)
 
     return listing_path
 
 
-def load_json_listing(file_path, start_path=None):
+def load_json_listing(file_path):
     # todo: used only by tests -> move it to tests ?
     """
     Args:
         file_path (pathlib.Path): path to an existing json serialized listing
-        start_path (pathlib.Path): start path to prepend to each relative path
-                                   in the listing
 
     Returns:
         collections.defaultdict(set) =
@@ -143,11 +137,6 @@ def load_json_listing(file_path, start_path=None):
                                           pointer[al.MTIME])
                                          for pointer in pointers}
                     for content, pointers in dict_listing.items()}
-    if start_path is not None:
-        dict_listing = {content: {(start_path / pointer[al.PATH],
-                                   pointer[al.MTIME])
-                                  for pointer in pointers}
-                        for content, pointers in dict_listing.items()}
     listing = collections.defaultdict(set, dict_listing)
     return listing
 
@@ -166,12 +155,7 @@ def _save_json_forbidden(forbidden, file_path):
     _write_text(json_forbidden, file_path)
 
 
-def _save_json_listing(listing, file_path, start_path=None):
-    if start_path is not None:
-        listing = {content: {
-            (at.build_relative_path(pointer[al.PATH], start_path),
-             pointer[al.MTIME]) for pointer in pointers}
-            for content, pointers in listing.items()}
+def _save_json_listing(listing, file_path):
     serializable_listing = {
         str((content[al.HASH], json.dumps(content[al.TYPE])[1:-1],
              content[al.SIZE])): [

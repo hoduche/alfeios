@@ -12,13 +12,38 @@ import alfeios.tool as at
 import alfeios.walker as aw
 
 """
-To replace expected results, you can use sed like this:
-find . -type f -name "*tree*.json" | xargs sed -i -E 's/"\(([^,]+), ([0-9\.]+)\)": \[([^,]+), ([^,]+), ([0-9]+)\]/\1: \[\3, \4, \5, \2\]/g'
-find . -type f -name "*tree*.json" | xargs sed -i -E 's/\x27/"/g'
-inside /tmp/pytest... after a test run
+-------------------------------------------------------
+After a test run with debug=False
+-------------------------------------------------------
+There will be a new directory /tmp/pytest.../data/
+Inside this directory you can recreate the data.tar.gz file
+replacing expected results with sed like this:
+
+$ find . -type f -name "*tree*.json" | xargs sed -i -E 's/"\(([^,]+), ([0-9\.]+)\)": \[([^,]+), ([^,]+), ([0-9]+)\]/\1: \[\3, \4, \5, \2\]/g'
+$ find . -type f -name "*tree*.json" | xargs sed -i -E 's/\x27/"/g'
+$ tar -czvf data.tar.gz *
+
+or
+
+$ find . -type f -name "*tree*.json" | xargs sed -i -E 's/"[^\/^"]+": \[([^]]+)]/"\.": \[\1\]/g'
+$ find . -type f -name "*tree*.json" | xargs sed -i -E 's/"[^\/]+\/([^"]+)": \[([^]]+)]/"\1": \[\2\]/g'
+$ tar -czvf data.tar.gz *
+
+-------------------------------------------------------
+After a test run with debug=True
+-------------------------------------------------------
+It is possible to clean the corresponding directory with :
+
+$ find . -type d -name .alfeios | xargs ls -l
+$ find . -type d -name .alfeios | xargs ls -ld
+$ find . -type d -name .alfeios | xargs rm -rf
+
+$ find . -type f -name *ordered.txt | xargs ls -l
+$ find . -type f -name *ordered.txt | xargs rm
+
 """
 
-debug = True
+debug = False
 
 tests_data = pathlib.Path(__file__).parent / 'data' / 'data.tar.gz'
 
@@ -82,7 +107,7 @@ def teardown(request, data_path):
     # teardown for each test in case you want to log debug info
     def log_sorted_results():
         if debug:
-            for folder in folders + ['.']:
+            for folder in folders + ['.', 'Folder8']:
                 for alfeios in ['.alfeios', '.alfeios_expected']:
                     alfeios_path = data_path / folder / alfeios
                     for listing_path in alfeios_path.glob('*listing*.json'):
@@ -100,7 +125,7 @@ def teardown(request, data_path):
 
 @pytest.mark.parametrize(argnames='folder, name', argvalues=vals, ids=folders)
 def test_walk(folder, name, data_path):
-    path = data_path / folder
+    path, original_cwd = at.change_dir_relative(data_path / folder)
 
     # run
     tree, forbidden = aw.walk(path)
@@ -112,7 +137,7 @@ def test_walk(folder, name, data_path):
 
     # load expected
     expected_tree = asd.load_json_tree(
-        path / '.alfeios_expected' / 'tree.json', start_path=data_path)
+        path / '.alfeios_expected' / 'tree.json')
 
     # verify
     assert tree == expected_tree
@@ -126,7 +151,7 @@ def test_walk_with_cache(data_path):  # todo real implementation
 
 
 def test_walk_with_exclusions(data_path):
-    path = data_path / 'Folder0'
+    path, original_cwd = at.change_dir_relative(data_path / 'Folder0')
     exclusion = {'Folder3', 'Folder4_1', 'file3.txt', 'groundhog.png'}
 
     # run
@@ -134,14 +159,14 @@ def test_walk_with_exclusions(data_path):
 
     # for logging purpose only
     if debug:
+        time.sleep(1)  # to avoid name_collision
         f = asd.save_json_tree(path, tree, forbidden)
         f = at.add_suffix(f, '_with_exclusions')
         reset_folder_time(path)
 
     # load expected
     expected_tree = asd.load_json_tree(
-        path / '.alfeios_expected' / 'tree_with_exclusions.json',
-        start_path=data_path)
+        path / '.alfeios_expected' / 'tree_with_exclusions.json')
 
     # verify
     assert tree == expected_tree
@@ -149,7 +174,8 @@ def test_walk_with_exclusions(data_path):
 
 
 def test_duplicate(data_path):
-    path = data_path / 'Folder0' / 'Folder3'
+    path, original_cwd = at.change_dir_relative(
+        data_path / 'Folder0' / 'Folder3')
 
     # run
     tree, forbidden = aw.walk(path)
@@ -158,14 +184,13 @@ def test_duplicate(data_path):
 
     # for logging purpose only
     if debug:
-        f = asd.save_json_listing(path, duplicate_listing, start_path=data_path)
+        f = asd.save_json_listing(path, duplicate_listing)
         f = at.add_suffix(f, '_duplicate')
         reset_folder_time(path)
 
     # load expected
     expected_duplicate_listing = asd.load_json_listing(
-        path / '.alfeios_expected' / 'duplicate_listing.json',
-        start_path=data_path)
+        path / '.alfeios_expected' / 'duplicate_listing.json')
 
     # verify
     assert duplicate_listing == expected_duplicate_listing
@@ -174,14 +199,15 @@ def test_duplicate(data_path):
 
 def test_duplicate_with_zip(data_path):
     # run
+    data_path, original_cwd = at.change_dir_relative(data_path)
+
     tree, forbidden = aw.walk(data_path)
     listing = al.tree_to_listing(tree)
     duplicate_listing, size_gain = al.get_duplicate(listing)
 
     # for logging purpose only
     if debug:
-        f = asd.save_json_listing(data_path, duplicate_listing,
-                                  start_path=data_path)
+        f = asd.save_json_listing(data_path, duplicate_listing)
         f = at.add_suffix(f, '_duplicate_with_zip')
         reset_folder_time(data_path)
 
@@ -199,7 +225,7 @@ def test_duplicate_with_zip(data_path):
 
 
 def test_missing_fully_included(data_path):
-    path = data_path / 'Folder0'
+    path, original_cwd = at.change_dir_relative(data_path / 'Folder0')
 
     # run
     tree3, forbidden3 = aw.walk(path / 'Folder3')
@@ -212,7 +238,7 @@ def test_missing_fully_included(data_path):
 
     # for logging purpose only
     if debug:
-        f = asd.save_json_listing(path, missing_listing, start_path=data_path)
+        f = asd.save_json_listing(path, missing_listing)
         f = at.add_suffix(f, '_missing_fully_included')
         reset_folder_time(path)
 
@@ -221,67 +247,48 @@ def test_missing_fully_included(data_path):
 
 
 def test_missing_not_fully_included(data_path):
-    path = data_path / 'Folder0'
-
     # run
-    tree8, forbidden8 = aw.walk(data_path / 'Folder8')
+    path8, original_cwd = at.change_dir_relative(data_path / 'Folder8')
+    tree8, forbidden8 = aw.walk(path8)
     listing8 = al.tree_to_listing(tree8)
 
-    tree0, forbidden0 = aw.walk(path)
+    path0, original_cwd = at.change_dir_relative(data_path / 'Folder0')
+    tree0, forbidden0 = aw.walk(path0)
     listing0 = al.tree_to_listing(tree0)
 
     missing_listing = al.get_missing(listing8, listing0)
 
     # for logging purpose only
     if debug:
-        f = asd.save_json_listing(path, missing_listing, start_path=data_path)
+        path8, original_cwd = at.change_dir_relative(data_path / 'Folder8')
+        f = asd.save_json_listing(path8, missing_listing)
         f = at.add_suffix(f, '_missing_not_fully_included')
-        reset_folder_time(path)
+        reset_folder_time(path8)
 
     # load expected
+    path8, original_cwd = at.change_dir_relative(data_path / 'Folder8')
     expected_missing_listing = asd.load_json_listing(
-        path / '.alfeios_expected' / 'listing_missing_from_Folder8.json',
-        start_path=data_path)
+        path8 / '.alfeios_expected' / 'listing_missing_in_Folder0.json')
 
     # verify
     assert missing_listing == expected_missing_listing
 
 
 def test_tree_to_listing(data_path):
-    path = data_path / 'Folder0' / '.alfeios_expected'
+    path, original_cwd = at.change_dir_relative(
+        data_path / 'Folder0' / '.alfeios_expected')
 
-    # load expected with start_path
-    expected_listing = asd.load_json_listing(path / 'listing.json',
-                                             start_path=data_path)
-    expected_tree = asd.load_json_tree(path / 'tree.json',
-                                       start_path=data_path)
-
-    # verify
-    assert al.tree_to_listing(expected_tree) == expected_listing
-
-    # load expected without start_path
     expected_listing = asd.load_json_listing(path / 'listing.json')
     expected_tree = asd.load_json_tree(path / 'tree.json')
 
-    # verify
     assert al.tree_to_listing(expected_tree) == expected_listing
 
 
 def test_listing_to_tree(data_path):
-    path = data_path / 'Folder0' / '.alfeios_expected'
+    path, original_cwd = at.change_dir_relative(
+        data_path / 'Folder0' / '.alfeios_expected')
 
-    # load expected with start_path
-    expected_listing = asd.load_json_listing(path / 'listing.json',
-                                             start_path=data_path)
-    expected_tree = asd.load_json_tree(path / 'tree.json',
-                                       start_path=data_path)
-
-    # verify
-    assert al.listing_to_tree(expected_listing) == expected_tree
-
-    # load expected without start_path
     expected_listing = asd.load_json_listing(path / 'listing.json')
     expected_tree = asd.load_json_tree(path / 'tree.json')
 
-    # verify
     assert al.listing_to_tree(expected_listing) == expected_tree

@@ -30,8 +30,15 @@ def is_compressed_file(path):
                                               '.bztar', '.xztar']
 
 
-def build_relative_path(absolute_path, start_path):
+def build_relative_path(absolute_path, start_path):  # todo check if still useful
     return pathlib.Path(os.path.relpath(str(absolute_path), start=start_path))
+
+
+def change_dir_relative(path):
+    original_cwd = os.getcwd()
+    os.chdir(path)
+    path = pathlib.Path()
+    return path, original_cwd
 
 
 def add_suffix(file_path, suffix):

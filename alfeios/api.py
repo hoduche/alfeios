@@ -30,18 +30,7 @@ def index(path, exclusion=None, no_cache=False):
         no_cache: boolean to decide if we should use cache when it exists
     """
 
-    path = pathlib.Path(path)
-    if path.is_dir():
-        os.chdir(path)
-        path = pathlib.Path()
-        cache = dict() if no_cache else asd.load_last_json_tree(path)
-        tree, forbidden = _walk_with_progressbar(path, exclusion=exclusion,
-                                                 cache=cache)
-        asd.save_json_tree(path, tree, forbidden)
-    else:
-        print(colorama.Fore.RED + 'This is not a valid path - exiting',
-              file=sys.stderr)
-        return
+    _index(path, exclusion, no_cache, save_index=True)
 
 
 def duplicate(path, exclusion=None, no_cache=False, save_index=False):
@@ -73,26 +62,20 @@ def duplicate(path, exclusion=None, no_cache=False, save_index=False):
         tree = asd.load_json_tree(path)
         # todo fragile hypothesis that this is inside an .alfeios directory
         path = path.parent.parent
-    elif path.is_dir():
-        cache = dict() if no_cache else asd.load_last_json_tree(path)
-        tree, forbidden = _walk_with_progressbar(path, exclusion=exclusion,
-                                                 cache=cache)
-        if save_index:
-            asd.save_json_tree(path, tree, forbidden)
     else:
-        print(colorama.Fore.RED + 'This is not a valid path - exiting',
-              file=sys.stderr)
-        return
+        tree = _index(path, exclusion, no_cache, save_index=save_index)
 
     listing = al.tree_to_listing(tree)
     duplicate_listing, size_gain = al.get_duplicate(listing)
 
     if duplicate_listing:
+        path, original_cwd = at.change_dir_relative(path)
         f = asd.save_json_listing(path, duplicate_listing)
         f = at.add_suffix(f, '_duplicate')
         print(colorama.Fore.GREEN +
               f'You can gain {at.natural_size(size_gain)} '
               f'space by going through {f}')
+        os.chdir(original_cwd)
     else:
         print(colorama.Fore.GREEN +
               'Congratulations there is no duplicate here')
@@ -104,7 +87,7 @@ def missing(old_path, new_path, exclusion=None, no_cache=False,
 
     - List all files and directories that are present in an old root directory
       and that are missing in a new one
-    - Save result as a missing_listing.json file in the new root directory
+    - Save result as a missing_listing.json file in the old root directory
     - Print the number of missing files
     - If a tree.json file is passed as positional argument instead of a root
       directory, the corresponding tree is deserialized from the json file
@@ -129,47 +112,49 @@ def missing(old_path, new_path, exclusion=None, no_cache=False,
     old_path = pathlib.Path(old_path)
     if old_path.is_file() and old_path.name.endswith('_tree.json'):
         old_tree = asd.load_json_tree(old_path)
-    elif old_path.is_dir():
-        old_cache = dict() if no_cache else asd.load_last_json_tree(old_path)
-        old_tree, old_forbidden = _walk_with_progressbar(old_path,
-                                                         exclusion=exclusion,
-                                                         cache=old_cache)
-        if save_index:
-            asd.save_json_tree(old_path, old_tree, old_forbidden)
+        # todo fragile hypothesis that this is inside an .alfeios directory
+        old_path = old_path.parent.parent
     else:
-        print(colorama.Fore.RED + 'Old is not a valid path - exiting',
-              file=sys.stderr)
-        return
+        old_tree = _index(old_path, exclusion, no_cache, save_index=save_index)
 
     new_path = pathlib.Path(new_path)
     if new_path.is_file() and new_path.name.endswith('_tree.json'):
         new_tree = asd.load_json_tree(new_path)
-        # todo fragile hypothesis that this is inside an .alfeios directory
-        new_path = new_path.parent.parent
-    elif new_path.is_dir():
-        new_cache = dict() if no_cache else asd.load_last_json_tree(new_path)
-        new_tree, new_forbidden = _walk_with_progressbar(new_path,
-                                                         exclusion=exclusion,
-                                                         cache=new_cache)
-        if save_index:
-            asd.save_json_tree(new_path, new_tree, new_forbidden)
     else:
-        print(colorama.Fore.RED + 'New is not a valid path - exiting',
-              file=sys.stderr)
-        return
+        new_tree = _index(new_path, exclusion, no_cache, save_index=save_index)
 
     old_listing = al.tree_to_listing(old_tree)
     new_listing = al.tree_to_listing(new_tree)
     missing_listing = al.get_missing(old_listing, new_listing)
+
     if missing_listing:
-        f = asd.save_json_listing(new_path, missing_listing)
+        old_path, original_cwd = at.change_dir_relative(old_path)
+        f = asd.save_json_listing(old_path, missing_listing)
         f = at.add_suffix(f, '_missing')
         print(colorama.Fore.GREEN +
               f'There are {len(missing_listing)} Old files missing in New'
-              f' - please go through {f}')
+              f' - please go through {f} in Old')
+        os.chdir(original_cwd)
     else:
         print(colorama.Fore.GREEN +
               'Congratulations Old content is totally included in New')
+
+
+def _index(path, exclusion=None, no_cache=False, save_index=False):
+    path = pathlib.Path(path)
+    if not path.is_dir():
+        print(colorama.Fore.RED + f'{path} is not a valid path - exiting',
+              file=sys.stderr)
+        return {}
+    else:
+        path, original_cwd = at.change_dir_relative(path)
+        cache = dict() if no_cache else asd.load_last_json_tree(path)
+        tree, forbidden = _walk_with_progressbar(path, exclusion=exclusion,
+                                                 cache=cache)
+        if save_index:
+            asd.save_json_tree(path, tree, forbidden)
+        os.chdir(original_cwd)
+        return tree
 
 
 def _walk_with_progressbar(path, exclusion=None, cache=None):
