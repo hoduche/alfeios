@@ -1,4 +1,3 @@
-import os
 import pathlib
 import sys
 
@@ -16,8 +15,7 @@ def index(path, exclusion=None, no_cache=False):
 
     - Index all file and directory contents in a root directory
       including the inside of zip, tar, gztar, bztar and xztar compressed files
-    - Contents are identified by their hash-code, path-type (file or directory)
-      and size
+    - Contents are identified by their hash-code and size
     - It saves 2 files in the root directory:
        - A tree.json.file that is a dictionary: path -> content
        - A forbidden.json file that lists paths with no access
@@ -69,13 +67,11 @@ def duplicate(path, exclusion=None, no_cache=False, save_index=False):
     duplicate_listing, size_gain = al.get_duplicate(listing)
 
     if duplicate_listing:
-        path, original_cwd = at.change_dir_relative(path)
         f = asd.save_json_listing(path, duplicate_listing)
         f = at.add_suffix(f, '_duplicate')
         print(colorama.Fore.GREEN +
               f'You can gain {at.natural_size(size_gain)} '
               f'space by going through {f}')
-        os.chdir(original_cwd)
     else:
         print(colorama.Fore.GREEN +
               'Congratulations there is no duplicate here')
@@ -128,13 +124,11 @@ def missing(old_path, new_path, exclusion=None, no_cache=False,
     missing_listing = al.get_missing(old_listing, new_listing)
 
     if missing_listing:
-        old_path, original_cwd = at.change_dir_relative(old_path)
         f = asd.save_json_listing(old_path, missing_listing)
         f = at.add_suffix(f, '_missing')
         print(colorama.Fore.GREEN +
               f'There are {len(missing_listing)} Old files missing in New'
               f' - please go through {f} in Old')
-        os.chdir(original_cwd)
     else:
         print(colorama.Fore.GREEN +
               'Congratulations Old content is totally included in New')
@@ -147,13 +141,11 @@ def _index(path, exclusion=None, no_cache=False, save_index=False):
               file=sys.stderr)
         return {}
     else:
-        path, original_cwd = at.change_dir_relative(path)
         cache = dict() if no_cache else asd.load_last_json_tree(path)
         tree, forbidden = _walk_with_progressbar(path, exclusion=exclusion,
                                                  cache=cache)
         if save_index:
             asd.save_json_tree(path, tree, forbidden)
-        os.chdir(original_cwd)
         return tree
 
 
@@ -164,15 +156,17 @@ def _walk_with_progressbar(path, exclusion=None, cache=None):
     pbar_nb_files = tqdm.tqdm(total=1, desc='Exploring',
                               unit=' files', unit_scale=False)
     t, f = aw.walk(path, exclusion=exclusion, cache=cache,
-                   should_hash=False, pbar=pbar_nb_files)
-    path_size = t[path][aw.SIZE]
+                   should_unzip=False, should_hash=False,
+                   pbar=pbar_nb_files)
+    path_size = sum(c[aw.SIZE] for c in t.values())
     pbar_nb_files.close()
 
     # Second walk with hashing and progress bar based on the total size to hash
     pbar_size = tqdm.tqdm(total=path_size, desc='Indexing ',
                           unit='B', unit_scale=True, unit_divisor=1024)
     tree, forbidden = aw.walk(path, exclusion=exclusion, cache=cache,
-                              should_hash=True, pbar=pbar_size)
+                              should_unzip=True, should_hash=True,
+                              pbar=pbar_size)
     pbar_size.close()
 
     return tree, forbidden

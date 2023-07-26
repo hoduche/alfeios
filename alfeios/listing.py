@@ -4,8 +4,7 @@ import alfeios.walker as aw
 
 # Content data
 HASH = 0   # content md5 hashcode
-TYPE = 1   # content type : PathType.FILE or PathType.DIR
-SIZE = 2   # content size in bytes
+SIZE = 1   # content size in bytes
 
 # Pointer data
 PATH = 0   # filesystem path
@@ -14,22 +13,21 @@ MTIME = 1  # last modification time
 
 def tree_to_listing(tree):
     """ Converts a directory tree index to a listing:
-    a collections.defaultdict(set) whose keys are 3-tuples
-    (hash-code, path-type, size)
+    a collections.defaultdict(set) whose keys are 2-tuples (hash-code, size)
     and values are set of 2-tuples (pathlib.Path, modification-time)
 
     Args:
-        tree: dict = {(pathlib.Path, int): (hash-code, path-type, int)}
+        tree: dict = {(pathlib.Path, int): (hash-code, int)}
               directory index
 
     Returns:
         listing   : collections.defaultdict(set) =
-                    {(hash-code, path-type, int): {(pathlib.Path, int)}}
+                    {(hash-code, int): {(pathlib.Path, int)}}
     """
 
     listing = collections.defaultdict(set)
     for k, v in tree.items():
-        content = (v[aw.HASH], v[aw.TYPE], v[aw.SIZE])
+        content = (v[aw.HASH], v[aw.SIZE])
         pointer = (k, v[aw.MTIME])
         listing[content].add(pointer)
     return listing
@@ -39,7 +37,7 @@ def listing_to_tree(listing):
     tree = dict()
     for k, pointers in listing.items():
         for pointer in pointers:
-            tree[pointer[PATH]] = (k[HASH], k[TYPE], k[SIZE], pointer[MTIME])
+            tree[pointer[PATH]] = (k[HASH], k[SIZE], pointer[MTIME])
     return tree
 
 

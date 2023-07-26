@@ -1,42 +1,25 @@
 import hashlib
+import os
 import pathlib
 import shutil
 import tempfile
 
 import alfeios.tool as at
 
-# TODO:
-"""
-Here are the  different options to simple walk:
-
-- use last result hashes if path, type, mtime and size are unchanged: Yes, No
-- hash results: Yes, No
-
-- find previous result inside or outside root folder: Yes, No
-- walk inside compressed files: Yes, No
-- hash directories: Yes, No
-
-- handle progress bar (interface implemented by tqdm): Yes, No
-- handle results in color (interface implemented by colorama): Yes, No
-
-- write result inside root folder: Yes, No
-"""
-
 # Content data
 HASH = 0  # content md5 hashcode
-TYPE = 1  # content type : PathType.FILE or PathType.DIR
-SIZE = 2  # content size in bytes
-MTIME = 3  # last modification time
+SIZE = 1  # content size in bytes
+MTIME = 2  # last modification time
 
 
-def walk(path, exclusion=None, cache=None, should_hash=True, pbar=None):
+def walk(path, exclusion=None, cache=None, should_unzip=True, should_hash=True,
+         pbar=None):
     """ Recursively walks through a root directory to index its content
 
     It manages two data structures:
     - tree: a dictionary whose keys are pathlib.Path and values are
-        4-tuples (hash-code, path-type, size, modification-time)
+        3-tuples (hash-code, size, modification-time)
         - hash-code is computed with the md5 hash function
-        - path-type distinguishes files from directories
         - size are expressed in bytes
         - modification-time are expressed in seconds since the Unix epoch
           00:00:00 UTC on 1 January 1970
@@ -47,14 +30,22 @@ def walk(path, exclusion=None, cache=None, should_hash=True, pbar=None):
         path (pathlib.Path): path to the root directory to parse
         exclusion (set of str): set of directories and files not to parse
         cache (tree): previous result to be used as cache to avoid re-hashing
-                      if path, type, mtime and size are unchanged
+                      if path, mtime and size are unchanged
+        should_unzip (bool): flag to unzip and walk compressed files or not
         should_hash (bool): flag to hash content or not
         pbar (object): progress bar that must implement the interface:
             * update()       - mandatory
             * set_postfix()  - nice to have
 
+    Possible future args:
+        - find previous result inside or outside root folder: Yes, No
+        - hash directories: Yes, No
+        - handle progress bar (interface implemented by tqdm): Yes, No
+        - handle results in color (interface implemented by colorama): Yes, No
+        - write result inside root folder: Yes, No
+
     Returns:
-        tree      : dict = {pathlib.Path: (hash-code, path-type, int, int)}
+        tree      : dict = {pathlib.Path: (hash-code, int, int)}
         forbidden : dict = {pathlib.Path: Exception}
     """
 
@@ -69,79 +60,76 @@ def walk(path, exclusion=None, cache=None, should_hash=True, pbar=None):
     forbidden = dict()
 
     #    path = path.resolve()  # todo remove if not used (understand before)
-    _recursive_walk(path, tree, forbidden, cache, exclusion, should_hash, pbar)
+    path, original_cwd = at.change_dir_relative(path)  # todo understand better
+    _recursive_walk(path, tree, forbidden, cache, exclusion,
+                    should_unzip, should_hash, pbar)
+    os.chdir(original_cwd)  # todo understand better
 
     return tree, forbidden
 
 
-def _recursive_walk(path, tree, forbidden, cache, exclusion, should_hash,
-                    pbar):
-
-    # CASE 0: path is in cache
-    # --------------------------------------------------
-    if path in cache:
-        cached_content = cache[path]
-        stat = path.stat()
-        if at.get_path_type(path) == cached_content[TYPE] and \
-                stat.st_size == cached_content[SIZE] and \
-                stat.st_mtime == cached_content[MTIME]:
-            tree[path] = cached_content
-            return
+def _recursive_walk(path, tree, forbidden, cache, exclusion,
+                    should_unzip, should_hash, pbar):
 
     # CASE 1: path is a directory
     # --------------------------------------------------
     if path.is_dir():
-        dir_size = 0
-        dir_hashes = []
         for child in path.iterdir():
             try:
                 if child.name not in exclusion and not child.is_symlink():
-                    _recursive_walk(child, tree, forbidden, cache,
-                                    exclusion, should_hash, pbar)
-                    if child not in forbidden:
-                        # by construction of the recursion
-                        # tree is guaranteed to contain child in its keys
-                        child_content = tree[child]
-                        dir_size += child_content[SIZE]
-                        dir_hashes.append(child_content[HASH])
+                    _recursive_walk(child, tree, forbidden, cache, exclusion,
+                                    should_unzip, should_hash, pbar)
             except (PermissionError, Exception) as e:
                 forbidden[child] = type(e)
-        if should_hash:
-            concat_hashes = '\n'.join(sorted(dir_hashes))
-            dir_hash = hashlib.md5(concat_hashes.encode()).hexdigest()
-        else:
-            dir_hash = ''
-        tree[path] = (dir_hash, at.PathType.DIR, dir_size,
-                      path.stat().st_mtime)
 
-    # CASE 2: path is a compressed file
+    # CASE 2: path is a file in cache (identical)
     # --------------------------------------------------
-    elif at.is_compressed_file(path):
-        temp_dir = pathlib.Path(tempfile.mkdtemp())
-        try:
-            at.unpack_archive_and_restore_mtime(path, extract_dir=temp_dir)
-            # calls the recursion one step above to create separate output
-            # that will be merged afterwards
-            zt, zf = walk(temp_dir, exclusion, cache=cache,
-                          should_hash=should_hash, pbar=pbar)
-            _append_tree(tree, zt, path, temp_dir)
-            _append_tree(forbidden, zf, path, temp_dir)
-        except (shutil.ReadError, OSError, Exception) as e:
-            forbidden[path] = type(e)
-            _hash_and_index_file(path, tree, should_hash=should_hash,
-                                 pbar=pbar)
-        finally:
-            shutil.rmtree(temp_dir)
+    elif path.is_file() and _has_same_file_in_cache(path, cache):
+        tree[path] = cache[path]
 
-    # CASE 3: path is a standard (uncompressed) file
+        # CASE 2 bis: path is a compressed file
+        # ----------------------------------------------
+        if at.is_compressed_file(path):
+            children_keys = [k for k in cache.keys() if path in k.parents]
+            for ck in children_keys:
+                tree[ck] = cache[ck]
+
+    # CASE 3: path is a file not in cache (or different)
     # --------------------------------------------------
     elif path.is_file():
         _hash_and_index_file(path, tree, should_hash=should_hash, pbar=pbar)
+
+        # CASE 3 bis: path is a compressed file
+        # ----------------------------------------------
+        if at.is_compressed_file(path) and should_unzip:
+            temp_dir = pathlib.Path(tempfile.mkdtemp())
+            try:
+                at.unpack_archive_and_restore_mtime(path, extract_dir=temp_dir)
+                # calls the recursion one step above with no cache to create
+                # separate output that will be merged afterwards
+                zt, zf = walk(temp_dir, exclusion, cache=dict(),
+                              should_unzip=should_unzip,
+                              should_hash=should_hash, pbar=pbar)
+                _append_tree(tree, zt, path)
+                _append_tree(forbidden, zf, path)
+            except (shutil.ReadError, OSError, Exception) as e:
+                forbidden[path] = type(e)
+            finally:
+                shutil.rmtree(temp_dir)
 
     # CASE 4: should not happen
     # --------------------------------------------------
     else:
         forbidden[path] = Exception
+
+
+def _has_same_file_in_cache(path, cache):
+    if path in cache:
+        cached = cache[path]
+        stat = path.stat()
+        if stat.st_size == cached[SIZE] and stat.st_mtime == cached[MTIME]:
+            return True
+    return False
 
 
 def _hash_and_index_file(path, tree, should_hash, pbar):
@@ -165,11 +153,9 @@ def _hash_and_index_file(path, tree, should_hash, pbar):
         hash_code = ''
 
     stat = path.stat()
-    tree[path] = (hash_code, at.PathType.FILE, stat.st_size, stat.st_mtime)
+    tree[path] = (hash_code, stat.st_size, stat.st_mtime)
 
 
-def _append_tree(tree, additional_tree, start_path, temp_path):
+def _append_tree(tree, additional_tree, start_path):
     for path, content in additional_tree.items():
-        relative_path = at.build_relative_path(path, temp_path)
-        absolute_path = start_path / relative_path
-        tree[absolute_path] = content
+        tree[start_path / path] = content

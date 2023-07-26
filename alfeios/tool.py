@@ -1,7 +1,5 @@
 import datetime
-import enum
 import os
-import os.path
 import pathlib
 import shutil
 import time
@@ -11,27 +9,9 @@ import zipfile
 DATE_FORMAT = '%Y_%m_%d_%H_%M_%S'
 
 
-class PathType(str, enum.Enum):
-    FILE = 'FILE'
-    DIR = 'DIR'
-
-
-def get_path_type(path):
-    if path.is_file():
-        return PathType.FILE
-    elif path.is_dir():
-        return PathType.DIR
-    else:
-        assert "Oups"  # todo check if pythonic
-
-
 def is_compressed_file(path):
     return path.is_file() and path.suffix in ['.zip', '.tar', '.gztar',
                                               '.bztar', '.xztar']
-
-
-def build_relative_path(absolute_path, start_path):  # todo check if still useful
-    return pathlib.Path(os.path.relpath(str(absolute_path), start=start_path))
 
 
 def change_dir_relative(path):

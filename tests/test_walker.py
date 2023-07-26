@@ -17,17 +17,24 @@ After a test run with debug=False
 -------------------------------------------------------
 There will be a new directory /tmp/pytest.../data/
 Inside this directory you can recreate the data.tar.gz file
-replacing expected results with sed like this:
+replacing expected results with sed (see examples below), then running:
+$ tar -czvf data.tar.gz *
 
+Example:
 $ find . -type f -name "*tree*.json" | xargs sed -i -E 's/"\(([^,]+), ([0-9\.]+)\)": \[([^,]+), ([^,]+), ([0-9]+)\]/\1: \[\3, \4, \5, \2\]/g'
 $ find . -type f -name "*tree*.json" | xargs sed -i -E 's/\x27/"/g'
-$ tar -czvf data.tar.gz *
 
-or
-
+Other example:
 $ find . -type f -name "*tree*.json" | xargs sed -i -E 's/"[^\/^"]+": \[([^]]+)]/"\.": \[\1\]/g'
 $ find . -type f -name "*tree*.json" | xargs sed -i -E 's/"[^\/]+\/([^"]+)": \[([^]]+)]/"\1": \[\2\]/g'
-$ tar -czvf data.tar.gz *
+
+Other example: remove the DIR lines in the trees
+$ find . -type f -name "*tree*.json" | xargs sed -i -E 's/"[^"]+": \["[^"]+", "DIR", [0-9]+, [0-9\.]+\], //g'
+$ find . -type f -name "*tree*.json" | xargs sed -i -E 's/, "[^"]+": \["[^"]+", "DIR", [0-9]+, [0-9\.]+\]//g'
+
+Other example: remove the "FILE" type in the trees and listings
+$ find . -type f -name "*tree*.json" | xargs sed -i -E 's/, "FILE"//g'
+$ find . -type f -name "*listing*.json" | xargs sed -i -E "s/, 'FILE'//g"
 
 -------------------------------------------------------
 After a test run with debug=True
@@ -125,7 +132,7 @@ def teardown(request, data_path):
 
 @pytest.mark.parametrize(argnames='folder, name', argvalues=vals, ids=folders)
 def test_walk(folder, name, data_path):
-    path, original_cwd = at.change_dir_relative(data_path / folder)
+    path = data_path / folder
 
     # run
     tree, forbidden = aw.walk(path)
@@ -151,7 +158,7 @@ def test_walk_with_cache(data_path):  # todo real implementation
 
 
 def test_walk_with_exclusions(data_path):
-    path, original_cwd = at.change_dir_relative(data_path / 'Folder0')
+    path = data_path / 'Folder0'
     exclusion = {'Folder3', 'Folder4_1', 'file3.txt', 'groundhog.png'}
 
     # run
@@ -174,8 +181,7 @@ def test_walk_with_exclusions(data_path):
 
 
 def test_duplicate(data_path):
-    path, original_cwd = at.change_dir_relative(
-        data_path / 'Folder0' / 'Folder3')
+    path = data_path / 'Folder0' / 'Folder3'
 
     # run
     tree, forbidden = aw.walk(path)
@@ -190,17 +196,15 @@ def test_duplicate(data_path):
 
     # load expected
     expected_duplicate_listing = asd.load_json_listing(
-        path / '.alfeios_expected' / 'duplicate_listing.json')
+        path / '.alfeios_expected' / 'listing_duplicate.json')
 
     # verify
     assert duplicate_listing == expected_duplicate_listing
     assert size_gain == 367645
 
 
-def test_duplicate_with_zip(data_path):
+def test_duplicate_with_zip(data_path):  # todo write the expected as others
     # run
-    data_path, original_cwd = at.change_dir_relative(data_path)
-
     tree, forbidden = aw.walk(data_path)
     listing = al.tree_to_listing(tree)
     duplicate_listing, size_gain = al.get_duplicate(listing)
@@ -212,20 +216,50 @@ def test_duplicate_with_zip(data_path):
         reset_folder_time(data_path)
 
     # verify
-    # here we only check that the root directory content of 4 folders are equal
-    # it sould be enough thanks to the Merkle tree property of alfeios listing
-    duplicate_root_content = ('4f8c48630a797715e8b86466e0218aa1',
-                              'DIR', 3598557)
+    duplicate_root_content = ('6a4316b18e6162cf9fcfa435c8eb74c1', 12)
     duplicate_root_pointers = duplicate_listing[duplicate_root_content]
     assert duplicate_root_pointers == {
-        (data_path / 'Folder0', 1610791200.0),
-        (data_path / 'FolderZipFile', 1610791200.0),
-        (data_path / 'FolderZipFolder', 1610791200.0),
-        (data_path / 'FolderZipNested', 1610791200.0)}
+        (pathlib.Path('Folder0/Folder1/file5.txt'), 1576878010.0),
+        (pathlib.Path('Folder0/Folder2/Folder2_1/file5.txt'), 1576878010.0),
+        (pathlib.Path('Folder0/Folder2/file5.txt'), 1576878010.0),
+        (pathlib.Path('Folder0/Folder3/Folder3_1/file5.txt'), 1576878010.0),
+        (pathlib.Path('Folder0/Folder3/file5.txt'), 1576878010.0),
+        (pathlib.Path('Folder0/Folder4/file5.txt'), 1576878010.0),
+        (pathlib.Path('Folder0/file5.txt'), 1576878010.0),
+        (pathlib.Path('Folder8/Folder3_1/file5.txt'), 1576878010.0),
+        (pathlib.Path('Folder8/Folder3_1/file6_included.txt'), 1576878010.0),
+        (pathlib.Path('Folder8/file5.txt'), 1576878010.0),
+        (pathlib.Path('FolderZipFile/Folder1/file5.txt'), 1576878010.0),
+        (pathlib.Path('FolderZipFile/Folder2/Folder2_1.zip/file5.txt'),
+         1571554388.0),
+        (pathlib.Path('FolderZipFile/Folder2/file5.txt'), 1576878010.0),
+        (pathlib.Path('FolderZipFile/Folder3/Folder3_1/file5.txt'),
+         1576878010.0),
+        (pathlib.Path('FolderZipFile/Folder3/file5.txt'), 1576878010.0),
+        (pathlib.Path('FolderZipFile/Folder4/file5.txt'), 1576878010.0),
+        (pathlib.Path('FolderZipFile/file5.txt'), 1576878010.0),
+        (pathlib.Path('FolderZipFolder/Folder1/file5.txt'), 1576878010.0),
+        (pathlib.Path('FolderZipFolder/Folder2.zip/Folder2_1/file5.txt'),
+         1571554388.0),
+        (pathlib.Path('FolderZipFolder/Folder2.zip/file5.txt'), 1571554388.0),
+        (pathlib.Path('FolderZipFolder/Folder3/Folder3_1/file5.txt'),
+         1576878010.0),
+        (pathlib.Path('FolderZipFolder/Folder3/file5.txt'), 1576878010.0),
+        (pathlib.Path('FolderZipFolder/Folder4/file5.txt'), 1576878010.0),
+        (pathlib.Path('FolderZipFolder/file5.txt'), 1576878010.0),
+        (pathlib.Path('FolderZipNested/Folder1/file5.txt'), 1576878010.0),
+        (pathlib.Path('FolderZipNested/Folder2.zip/Folder2_1.zip/file5.txt'),
+         1571554388.0),
+        (pathlib.Path('FolderZipNested/Folder2.zip/file5.txt'), 1571554388.0),
+        (pathlib.Path('FolderZipNested/Folder3/Folder3_1/file5.txt'),
+         1576878010.0),
+        (pathlib.Path('FolderZipNested/Folder3/file5.txt'), 1576878010.0),
+        (pathlib.Path('FolderZipNested/Folder4/file5.txt'), 1576878010.0),
+        (pathlib.Path('FolderZipNested/file5.txt'), 1576878010.0)}
 
 
 def test_missing_fully_included(data_path):
-    path, original_cwd = at.change_dir_relative(data_path / 'Folder0')
+    path = data_path / 'Folder0'
 
     # run
     tree3, forbidden3 = aw.walk(path / 'Folder3')
@@ -248,11 +282,11 @@ def test_missing_fully_included(data_path):
 
 def test_missing_not_fully_included(data_path):
     # run
-    path8, original_cwd = at.change_dir_relative(data_path / 'Folder8')
+    path8 = data_path / 'Folder8'
     tree8, forbidden8 = aw.walk(path8)
     listing8 = al.tree_to_listing(tree8)
 
-    path0, original_cwd = at.change_dir_relative(data_path / 'Folder0')
+    path0 = data_path / 'Folder0'
     tree0, forbidden0 = aw.walk(path0)
     listing0 = al.tree_to_listing(tree0)
 
@@ -260,13 +294,11 @@ def test_missing_not_fully_included(data_path):
 
     # for logging purpose only
     if debug:
-        path8, original_cwd = at.change_dir_relative(data_path / 'Folder8')
         f = asd.save_json_listing(path8, missing_listing)
         f = at.add_suffix(f, '_missing_not_fully_included')
         reset_folder_time(path8)
 
     # load expected
-    path8, original_cwd = at.change_dir_relative(data_path / 'Folder8')
     expected_missing_listing = asd.load_json_listing(
         path8 / '.alfeios_expected' / 'listing_missing_in_Folder0.json')
 
@@ -275,8 +307,7 @@ def test_missing_not_fully_included(data_path):
 
 
 def test_tree_to_listing(data_path):
-    path, original_cwd = at.change_dir_relative(
-        data_path / 'Folder0' / '.alfeios_expected')
+    path = data_path / 'Folder0' / '.alfeios_expected'
 
     expected_listing = asd.load_json_listing(path / 'listing.json')
     expected_tree = asd.load_json_tree(path / 'tree.json')
@@ -285,8 +316,7 @@ def test_tree_to_listing(data_path):
 
 
 def test_listing_to_tree(data_path):
-    path, original_cwd = at.change_dir_relative(
-        data_path / 'Folder0' / '.alfeios_expected')
+    path = data_path / 'Folder0' / '.alfeios_expected'
 
     expected_listing = asd.load_json_listing(path / 'listing.json')
     expected_tree = asd.load_json_tree(path / 'tree.json')
