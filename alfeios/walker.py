@@ -85,42 +85,46 @@ def _recursive_walk(path, tree, forbidden, cache, exclusion,
     # CASE 2: path is a file in cache (identical)
     # --------------------------------------------------
     elif path.is_file() and _has_same_file_in_cache(path, cache):
-        tree[path] = cache[path]
-
-        # CASE 2 bis: path is a compressed file
-        # ----------------------------------------------
-        if at.is_compressed_file(path):
-            children_keys = [k for k in cache.keys() if path in k.parents]
-            for ck in children_keys:
-                tree[ck] = cache[ck]
+        _fill_tree_from_cache(tree, path, cache)
 
     # CASE 3: path is a file not in cache (or different)
     # --------------------------------------------------
     elif path.is_file():
-        _hash_and_index_file(path, tree, should_hash=should_hash, pbar=pbar)
-
-        # CASE 3 bis: path is a compressed file
-        # ----------------------------------------------
-        if at.is_compressed_file(path) and should_unzip:
-            temp_dir = pathlib.Path(tempfile.mkdtemp())
-            try:
-                at.unpack_archive_and_restore_mtime(path, extract_dir=temp_dir)
-                # calls the recursion one step above with no cache to create
-                # separate output that will be merged afterwards
-                zt, zf = walk(temp_dir, exclusion, cache=dict(),
-                              should_unzip=should_unzip,
-                              should_hash=should_hash, pbar=pbar)
-                _append_tree(tree, zt, path)
-                _append_tree(forbidden, zf, path)
-            except (shutil.ReadError, OSError, Exception) as e:
-                forbidden[path] = type(e)
-            finally:
-                shutil.rmtree(temp_dir)
+        _fill_tree_from_hash(tree, forbidden, path, exclusion, should_hash,
+                             should_unzip, pbar)
 
     # CASE 4: should not happen
     # --------------------------------------------------
     else:
         forbidden[path] = Exception
+
+
+def _fill_tree_from_hash(tree, forbidden, path, exclusion, should_hash,
+                         should_unzip, pbar):
+    _hash_and_index_file(path, tree, should_hash=should_hash, pbar=pbar)
+    if at.is_compressed_file(path) and should_unzip:
+        temp_dir = pathlib.Path(tempfile.mkdtemp())
+        try:
+            at.unpack_archive_and_restore_mtime(path, extract_dir=temp_dir)
+            # calls the recursion one step above with no cache to create
+            # separate output that will be merged afterwards
+            zt, zf = walk(temp_dir, exclusion, cache=dict(),
+                          should_unzip=should_unzip,
+                          should_hash=should_hash, pbar=pbar)
+            _append_tree(tree, zt, path)
+            _append_tree(forbidden, zf, path)
+        except (shutil.ReadError, OSError, Exception) as e:
+            forbidden[path] = type(e)
+        finally:
+            shutil.rmtree(temp_dir)
+
+
+def _fill_tree_from_cache(tree, path, cache):
+    tree[path] = cache[path]
+    if at.is_compressed_file(path):
+        children_keys = [k for k in cache.keys() if path in k.parents]
+        for ck in children_keys:
+            tree[ck] = cache[ck]
 
 
 def _has_same_file_in_cache(path, cache):
