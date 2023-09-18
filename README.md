@@ -54,11 +54,9 @@ Index content of a root directory:
   including the inside of zip, tar, gztar, bztar and xztar compressed files
 - Contents are identified by their hash-code, type (file or directory) and
   size
-- It saves three files tagged with the current time in a .alfeios folder 
+- It saves two files tagged with the current time in a .alfeios folder 
 in the root directory:
-    - A listing.json file that is a dictionary: content -> list of paths
     - A tree.json.file that is a dictionary: path -> content
-      (the listing.json dual)
     - A forbidden.json file that lists paths with no access
 
 Example:
@@ -93,12 +91,11 @@ alfeios d D:/Pictures/.alfeios/2020_01_29_10_29_39_listing.json
 If no positional argument is passed, the root directory is 
 defaulted to the current working directory.
 
-The '-s' or '--save-index' optional flag saves the listing.json,
-tree.json and forbidden.json files tagged with the current time in 
-a .alfeios folder in the root directory.
+The '-s' or '--save-index' optional flag saves the tree.json and forbidden.json
+files tagged with the current time in a .alfeios folder in the root directory.
 
-If a listing.json file is passed as positional argument instead of a root
-directory, the listing is deserialized from the json file
+If a tree.json file is passed as positional argument instead of a root
+directory, the tree is deserialized from the json file
 instead of being generated, which is significantly quicker but of course
 less up to date.
 
@@ -108,7 +105,7 @@ Find missing content in a new root directory from an old root directory:
 - List all files and directories that are present in an old root directory
   and that are missing in a new one
 - Save result as a missing_listing.json file tagged with the current time 
-in a .alfeios folder in the new root directory
+in a .alfeios folder in the old root directory
 - Print the number of missing files
 
 Example:
@@ -120,12 +117,12 @@ alfeios m D:/Pictures/.alfeios/2020_01_29_10_29_39_listing.json E:/AllPics
 
 `alfeios mis` and `alfeios m` can be used as aliases for `alfeios missing`
 
-The '-s' or '--save-index' optional flag saves the listing.json,
-tree.json and forbidden.json files tagged with the current time in 
-a .alfeios folder in the 2 root directories.
+The '-s' or '--save-index' optional flag saves the tree.json and forbidden.json
+files tagged with the current time in a .alfeios folder in the 2 root
+directories.
 
-If a listing.json file is passed as positional argument instead of a root
-directory, the corresponding listing is deserialized from the json file
+If a tree.json file is passed as positional argument instead of a root
+directory, the corresponding tree is deserialized from the json file
 instead of being generated, which is significantly quicker but of course
 less up to date.
 
@@ -144,7 +141,7 @@ import pathlib
 import alfeios.api
 
 folder_path = pathlib.Path('D:/Pictures')
-listing, tree, forbidden = alfeios.api.index(folder_path)
+alfeios.api.index(folder_path)
 ```
 
 ## Areas for improvement
