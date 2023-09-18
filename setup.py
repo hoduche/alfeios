@@ -48,7 +48,7 @@ setuptools.setup(
     packages=setuptools.find_packages(),
     include_package_data=True,
     install_requires=find_requirements(),
-    python_requires='>=3.6',
+    python_requires='>=3.9',
     entry_points={'console_scripts': ['alfeios=alfeios.cli:main']},
     classifiers=[
         "Programming Language :: Python :: 3",
