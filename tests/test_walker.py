@@ -133,7 +133,7 @@ def test_index_with_cache(data_path):
     h.create_zip(path / "archive_1", dt_tuple2, path / "archive_dir")
     shutil.rmtree(path / "archive_dir")
 
-    with unittest.mock.patch("alfeios.walker._fill_tree_from_hash") as ha:
+    with unittest.mock.patch("alfeios.walker._hash_and_index_file") as ha:
         with unittest.mock.patch("alfeios.walker._fill_tree_from_cache") as ca:
             aa.index(path)
             ha.assert_called()  # 14 times (7 for 1st run + 7 for 2nd run)
@@ -146,7 +146,7 @@ def test_index_with_cache(data_path):
     assert tree == expected_tree
 
     time.sleep(1)  # to avoid name_collision
-    with unittest.mock.patch("alfeios.walker._fill_tree_from_hash") as ha:
+    with unittest.mock.patch("alfeios.walker._hash_and_index_file") as ha:
         with unittest.mock.patch("alfeios.walker._fill_tree_from_cache") as ca:
             aa.index(path)
             ha.assert_called()  # 7 times (for 1st run with should_hash=False)
@@ -156,7 +156,7 @@ def test_index_with_cache(data_path):
     h.reset_time(path / "file2.txt", dt_tuple3)
     h.create_txt(path / "file3.txt", dt_tuple3, content3 + content2)
 
-    with unittest.mock.patch("alfeios.walker._fill_tree_from_hash") as ha:
+    with unittest.mock.patch("alfeios.walker._hash_and_index_file") as ha:
         with unittest.mock.patch("alfeios.walker._fill_tree_from_cache") as ca:
             aa.index(path)
             ha.assert_called()  # 9 times (7 for 1st run + 2 for 2nd run)

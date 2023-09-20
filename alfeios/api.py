@@ -156,7 +156,7 @@ def _walk_with_progressbar(path, exclusion=None, cache=None):
     pbar_nb_files = tqdm.tqdm(total=1, desc='Exploring',
                               unit=' files', unit_scale=False)
     t, f = aw.walk(path, exclusion=exclusion, cache=dict(),
-                   should_unzip=False, should_hash=False,
+                   should_unzip=True, should_hash=False,
                    pbar=pbar_nb_files)
     path_size = sum(c[aw.SIZE] for c in t.values())
     pbar_nb_files.close()
