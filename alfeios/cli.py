@@ -52,6 +52,10 @@ def main():
         '-n', '--no-cache', action='store_true',
         help='do not use cache already saved in .alfeios directory'
     )
+    parser_i.add_argument(
+        '-p', '--progress-bar', action='store_true',
+        help='show command progress with a progress bar'
+    )
 
     # create the parser for the duplicate command
     parser_d = subparsers_factory.add_parser(
@@ -61,14 +65,14 @@ def main():
         epilog='''example:
   alfeios duplicate
   alfeios dup -ns D:/Pictures
-  alfeios d D:/Pictures/.alfeios/2020_01_29_10_29_39_listing.json
+  alfeios d D:/Pictures/.alfeios/2020_01_29_10_29_39_tree.json
 ''',
         formatter_class=dsargparse.RawTextHelpFormatter
     )
     parser_d.add_argument(
         'path',
         nargs='?', default='.',
-        help='path to the root directory (or listing.json) - '
+        help='path to the root directory (or tree.json) - '
              'default is current working directory'
     )
     parser_d.add_argument(
@@ -89,17 +93,17 @@ def main():
         epilog='''examples:
   alfeios missing D:/Pictures E:/AllPictures
   alfeios mis -ns D:/Pictures E:/AllPictures
-  alfeios m D:/Pictures/.alfeios/2020_01_29_10_29_39_listing.json E:/AllPics
+  alfeios m D:/Pictures/.alfeios/2020_01_29_10_29_39_tree.json E:/AllPics
 ''',
         formatter_class=dsargparse.RawTextHelpFormatter
     )
     parser_m.add_argument(
         'old_path',
-        help='path to the old root directory (or old listing.json)'
+        help='path to the old root directory (or old tree.json)'
     )
     parser_m.add_argument(
         'new_path',
-        help='path to the new root directory (or new listing.json)'
+        help='path to the new root directory (or new tree.json)'
     )
     parser_m.add_argument(
         '-n', '--no-cache', action='store_true',

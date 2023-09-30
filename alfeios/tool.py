@@ -10,8 +10,8 @@ DATE_FORMAT = '%Y_%m_%d_%H_%M_%S'
 
 
 def is_compressed_file(path):
-    return path.is_file() and path.suffix in ['.zip', '.tar', '.gztar',
-                                              '.bztar', '.xztar']
+    return path.is_file() and path.suffix in [
+        '.zip', '.tar', '.gztar', '.bztar', '.xztar']
 
 
 def change_dir_relative(path):
@@ -57,10 +57,10 @@ def _restore_mtime_after_unpack(archive, extract_dir):
     os.utime(extract_dir, (archive_mtime, archive_mtime))
     info_map = {f.filename: f.date_time
                 for f in zipfile.ZipFile(archive, 'r').infolist()}
-    for file in extract_dir.rglob("*"):
-        if file.name in info_map:
+    for path_object in extract_dir.rglob("*"):
+        if path_object.name in info_map:
             # still need to adjust the dt o/w item will have the current dt
-            mtime = time.mktime(info_map[file.name] + (0, 0, -1))
+            mtime = time.mktime(info_map[path_object.name] + (0, 0, -1))
         else:
             mtime = archive_mtime
-        os.utime(file, (mtime, mtime))
+        os.utime(path_object, (mtime, mtime))

@@ -144,6 +144,16 @@ folder_path = pathlib.Path('D:/Pictures')
 alfeios.api.index(folder_path)
 ```
 
+To build:
+```
+flake8 -v alfeios tests
+pytest -vv
+python3 -m build
+python3 -m twine upload dist/*
+```
+
+
+
 ## Areas for improvement
 
 ### Viewer

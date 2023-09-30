@@ -1,12 +1,4 @@
 ----------------------------------------------------------------
-how to build
-----------------------------------------------------------------
-flake8 -v alfeios tests
-pytest -vv
-python3 -m build
-python3 -m twine upload dist/*
-
-----------------------------------------------------------------
 to do list
 ----------------------------------------------------------------
  * do the whole HO use case with several old and several new root directories

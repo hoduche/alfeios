@@ -10,7 +10,7 @@ import alfeios.tool as at
 import alfeios.walker as aw
 
 
-def index(path, exclusion=None, no_cache=False):
+def index(path, exclusion=None, no_cache=False, progress_bar=False):
     """
 
     - Index all file and directory contents in a root directory
@@ -26,9 +26,10 @@ def index(path, exclusion=None, no_cache=False):
         path (str or pathlib.Path): path to the root directory
         exclusion (set of str): set of directories and files not to consider
         no_cache: boolean to decide if we should use cache when it exists
+        progress_bar: boolean to show command progress with a progress bar
     """
 
-    _index(path, exclusion, no_cache, save_index=True)
+    _index(path, exclusion, no_cache, progress_bar, save_index=True)
 
 
 def duplicate(path, exclusion=None, no_cache=False, save_index=False):
@@ -134,7 +135,8 @@ def missing(old_path, new_path, exclusion=None, no_cache=False,
               'Congratulations Old content is totally included in New')
 
 
-def _index(path, exclusion=None, no_cache=False, save_index=False):
+def _index(path, exclusion=None, no_cache=False, progress_bar=False,
+           save_index=False):
     path = pathlib.Path(path)
     if not path.is_dir():
         print(colorama.Fore.RED + f'{path} is not a valid path - exiting',
@@ -142,11 +144,22 @@ def _index(path, exclusion=None, no_cache=False, save_index=False):
         return {}
     else:
         cache = dict() if no_cache else asd.load_last_json_tree(path)
-        tree, forbidden = _walk_with_progressbar(path, exclusion=exclusion,
-                                                 cache=cache)
+        if progress_bar:
+            tree, forbidden = _walk_with_progressbar(
+                path, exclusion=exclusion, cache=cache)
+        else:
+            tree, forbidden = _walk_without_progressbar(
+                path, exclusion=exclusion, cache=cache)
         if save_index:
             asd.save_json_tree(path, tree, forbidden)
         return tree
+
+
+def _walk_without_progressbar(path, exclusion=None, cache=None):
+    tree, forbidden = aw.walk(path, exclusion=exclusion, cache=cache,
+                              should_unzip=True, should_hash=True,
+                              pbar=None)
+    return tree, forbidden
 
 
 def _walk_with_progressbar(path, exclusion=None, cache=None):
